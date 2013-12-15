@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="initial-scale=1">
+<title>Finding Memory Leaks With The LLVM/Clang Static Analyzer | Core Fruition</title>
+
+
+			<link rel="alternate" type="application/rss+xml" title="Core Fruition &raquo; Finding Memory Leaks With The LLVM/Clang Static Analyzer Comments Feed" href="feed/index.html" />
+<link rel='prev' title='Mac Developer Roundtable' href='../../07/mac-developer-roundtable/index.html' />
+<link rel='next' title='Unlearning Cocoa' href='../unlearning-cocoa/index.html' />
+</head>
+
+<body class="single single-post postid-15 single-format-standard custom-background group-blog">
+
+
+
+		
+			
+
+			
+				
+<article id="post-15" class="post-15 post type-post status-publish format-standard hentry category-cocoa category-debugging">
+	
+		<h1>Finding Memory Leaks With The LLVM/Clang Static Analyzer</h1>
+
+		
+			<a href="index.html" title="10:03 PM" rel="bookmark"><time class="entry-date" datetime="2008-08-04T22:03:14+00:00">August 4, 2008</time></a>		</div>
+	
+
+	
+		<p> </p>
+<div>
+<p>While you may be familiar with <a href="http://www.cimgf.com/2008/04/02/cocoa-tutorial-fixing-memory-leaks-with-instruments/">using tools like Instruments to find and fix memory leaks in your application</a>, the Clang Static Analyzer takes a different approach to memory leak detection by compiling your Xcode project and scanning each method, class, loop, and logic block for potential leaks. You may have heard of the Clang Static Analyzer referred to by the name of the command line tool used to run the analyzer: scan-build. That is how I will be referring to it for the remainder of this post.</p>
+<h3>Requirements &amp; Where To Get It</h3>
+<p>scan-build is currently only available in binary form for OS X 10.5.<br />
+If you haven&#8217;t yet downloaded scan-build head on over to <a href="http://clang.llvm.org/StaticAnalysis.html">the LLVM/Clang Static Analyzer homepage</a> and look for the Download section at the bottom of the page. Click the link for checker-NN.tar.gz (where NN is some build number). At the time of this writing the link reads checker-72.tar.gz. The developers of scan-build are very active so I have no doubt that the build number is already different.</p>
+<h3>Installation</h3>
+<p>Since scan-build is a command line tool it makes sense to install it into one of OS X&#8217;s pre-defined command line tool locations. We&#8217;ll put it in /usr/local/bin.</p>
+<ol>
+<li>Make sure that you&#8217;ve expanded checker-NN.tar.gz to your Downloads folder</li>
+<li>We&#8217;re going to be installing the checker binaries into your /usr/local/bin directory.  Run the following command to ensure that this directory exists:</li>
+<pre> sudo mkdir -p /usr/local/bin</pre>
+<li>Open Terminal.app and move the contents of checker-NN to the /usr/local/bin directory (remember to replace NN with the build number of your download):
+<pre>sudo mv ~/Downloads/checker-NN/* /usr/local/bin/</pre>
+</li>
+</ol>
+<h3>Basic Usage</h3>
+<p>scan-build tests your code by compiling your Xcode project and studying it for defects during the build process. To check your code, you just invoke scan-build from the command line at the top level of any one of your project directories.</p>
+<ol>
+<li>Still in Terminal.app, change into one of your Xcode project directories</li>
+<li>Run scan-build on your Xcode project:</li>
+<pre>scan-build xcodebuild</pre>
+<p>There&#8217;s quite a bit of output when scan-build runs, but once it finishes running you will either see</p>
+<pre>** BUILD SUCCEEDED **
+scan-build: No bugs found.</pre>
+<p>or something similar to</p>
+<pre>** BUILD SUCCEEDED **
+
+scan-build: 7 bugs found.
+
+scan-build: Open '/tmp/scan-build-fw1RAD/2008-07-31-1/index.html' to examine bug reports.</pre>
+<li>Copy the section similar to Open &#8216;/tmp/scan-build-fw1RAD/2008-07-31-1/index.html&#8217;, paste it back onto the command line and hit return.</li>
+<li>You&#8217;ll be presented with the Summary screen. Click on the View link next to each bug to see your code with an inset bubble describing the bug that scan-build found</li>
+</ol>
+<h3>iPhone Usage</h3>
+<p>Using scan-build with the iPhone requires a little extra tweaking in your Xcode project settings to make sure that you are compiling your project using an SDK that is compatible with scan-build&#8217;s compiler.  The rest of these instructions assume a project who&#8217;s configuration has not been modified beyond what is provided when you create a new project.  I will be working with a project titled <em>WhatsMyIP</em>.</p>
+<ol>
+<li>Open the iPhone Xcode project that you want to run scan-build on and bring up the project settings panel.<br />
+<img class="alignnone size-full wp-image-139" title="Open Project Settings" src="http://fruitstandsoftware.com/blog/wp-content/uploads/2008/08/projectsettings.png" alt="Open Project Settings" width="581" height="460" /></li>
+<li>On the <strong>General</strong> tab change the <strong>Base SDK for All Configurations</strong> to one of the Simulator SDKs.<br />
+<img class="alignnone size-full wp-image-145" title="Project Settings - General" src="http://fruitstandsoftware.com/blog/wp-content/uploads/2008/08/projectsettings-general.png" alt="Project Settings - General" width="719" height="650" /></li>
+<li>Switch over to the <strong>Build</strong> tab and scroll down to the <strong>Code Signing</strong> section.  Change both the <strong>Code Signing Identity </strong>and the entry under it to <strong>Don&#8217;t Code Sign</strong>.<br />
+<img class="alignnone size-full wp-image-149" title="projectsettings-build" src="http://fruitstandsoftware.com/blog/wp-content/uploads/2008/08/projectsettings-build.png" alt="projectsettings-build" width="744" height="673" /></li>
+<li>After making these changes you should be able to run scan-build on your iPhone project successfully.</li>
+</ol>
+<h3>Customizing Your Output</h3>
+<p>After running scan-build a few times the first thing that you might want to do is tell scan-build to put its reports in a different directory. To do that, simply specify the output folder on the command line like so:<br />
+<code>scan-build -o /path/to/the/directory/where/you/want/your/report xcodebuild</code></p>
+<p>There are a few other flags that can be passed to scan-build, but for now the reports that are generated should be the same regardless of the flags you set. Check out the Other Options section on the <a href="http://clang.llvm.org/StaticAnalysisUsage.html">Static Analyzer usage page</a> for the full (but still pretty short) list of available options.</p>
+<h3>Wrap Up</h3>
+<p>One thing to note is that scan-build is still in pre-1.0 and has some rough edges. You may notice some false-positives or other undesirable behavior. As with any pre-release software use it at your own risk and always have a backup of your work. That being said, I have not had nor heard of any disastrous problems with it, so your risk is probably pretty low.</p>
+<p>A lot of folks in the OS X development community have gotten a lot of use out of scan-build in the past few months. One of the larger scale uses of it can be found on the Adium project, you can view the results of their static analysis <a href="http://trac.adiumx.com/wiki/StaticAnalysis">here</a>.</p>
+<p>Good luck!</p></div>
+			</div>
+
+	
+		This entry was posted in <a href="../../../category/cocoa/index.html" title="View all posts in Cocoa" rel="category tag">Cocoa</a>, <a href="../../../category/debugging/index.html" title="View all posts in Debugging" rel="category tag">Debugging</a>. 
+			
+</article>
+
+					<nav role="navigation" id="nav-below" class="site-navigation post-navigation">
+		
+
+	
+		<div class="nav-previous"><a href="../../07/mac-developer-roundtable/index.html" rel="prev"><span class="meta-nav">&larr;</span> Mac Developer Roundtable</a></div>		<div class="nav-next"><a href="../unlearning-cocoa/index.html" rel="next">Unlearning Cocoa <span class="meta-nav">&rarr;</span></a></div>
+	
+	</nav>
+	
+				
+
+	
+
+	
+			<h2 class="comments-title">
+			44 thoughts on &ldquo;<span>Finding Memory Leaks With The LLVM/Clang Static Analyzer</span>&rdquo;		</h2>
+
+		
+		<ol class="commentlist">
+				<li class="comment even thread-even depth-1" id="li-comment-2">
+		<article id="comment-2" class="comment">
+			<footer>
+				<div class="comment-author vcard">
+										<cite class="fn"><a href='http://clang.llvm.org' rel='external nofollow' class='url'>Ted Kremenek</a></cite> <span class="says">says:</span>				</div>
+				
+				<div class="comment-meta commentmetadata">
+					<a href="comment-page-1/index.html#comment-2"><time datetime="2008-08-05T02:59:42+00:00">
+					August 5, 2008 at 2:59 AM					</time></a>
+									</div>
+			
+
+			<div class="comment-content"><p>The static analyzer is actually 100% open source as part of the Clang project, so those who wish to build the source directly can do so by visiting <a href="http://clang.llvm.org" rel="nofollow">http://clang.llvm.org</a>.</p>
+<p>I do know of users who have used the analyzer to scan source code in FreeBSD, so anyone who can build Clang from source is welcome to give the analyzer a try (not just OS X developers).  We&#8217;re just not providing pre-built binaries for a bunch of platforms at this time.  The binaries we do provide right now should be viewed as a little more than a nightly build, as we roll in bug fixes and feature improvements every couple of days.</p>
+<p>I think characterizing the tool as pre-1.0 is very accurate.  There are many things we would like to do improve the tool&#8217;s analysis precision, workflow, expand the kind of checks it performs, etc.  Any suggestions for how to improve the tool are extremely welcome!</p>
+</div>
+
+			<div class="reply">
+							</div>
+		</article>
+
+	</li>
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="li-comment-3">
+		<article id="comment-3" class="comment">
+			<footer>
+				<div class="comment-author vcard">
+										<cite class="fn"><a href='http://outerlevel.com/blog' rel='external nofollow' class='url'>Jon Trainer</a></cite> <span class="says">says:</span>				</div>
+				
+				<div class="comment-meta commentmetadata">
+					<a href="comment-page-1/index.html#comment-3"><time datetime="2008-08-05T10:49:27+00:00">
+					August 5, 2008 at 10:49 AM					</time></a>
+									</div>
+			
+
+			<div class="comment-content"><p>Try using the -V option to automatically open the report in your default browser &#8212;  Saves you a step.</p>
+</div>
+
+			<div class="reply">
+							</div>
+		</article>
+
+	</li>
+	<li class="post pingback">
+		<p>Pingback: <a href='http://www.iphonedevsdk.com/forum/iphone-sdk-development/7242-yeah-its-past-3-30am-i-am-stuck.html#post32591' rel='external nofollow' class='url'>Yeah it's past 3:30am and i am stuck - iPhone Dev SDK Forum</a></p>
+	</li>
+	<li class="post pingback">
+		<p>Pingback: <a href='http://www.alexcurylo.com/blog/2009/01/02/image-memory/' rel='external nofollow' class='url'>Image memory at Under The Bridge</a></p>
+	</li>
+	<li class="post pingback">
+		<p>Pingback: <a href='http://blog.hawkey.org/?p=62' rel='external nofollow' class='url'>Memory leak detection made easy.</a></p>
+	</li>
+	<li class="comment even thread-even depth-1" id="li-comment-7">
+		<article id="comment-7" class="comment">
+			<footer>
+				<div class="comment-author vcard">
+										<cite class="fn"><a href='http://welcome.totheinter.net' rel='external nofollow' class='url'>Adam Wulf</a></cite> <span class="says">says:</span>				</div>
+				
+				<div class="comment-meta commentmetadata">
+					<a href="comment-page-1/index.html#comment-7"><time datetime="2009-03-05T03:12:26+00:00">
+					March 5, 2009 at 3:12 AM					</time></a>
+									</div>
+			
+
+			<div class="comment-content"><p>very handy guide, thank you!</p>
+<p>i&#8217;m struggling with my first iphone app and running into memory problems, and this is certain to help. huge thanks!</p>
+</div>
+
+			<div class="reply">
+							</div>
+		</article>
+
+	</li>
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="li-comment-8">
+		<article id="comment-8" class="comment">
+			<footer>
+				<div class="comment-author vcard">
+										<cite class="fn">peter JC</cite> <span class="says">says:</span>				</div>
+				
+				<div class="comment-meta commentmetadata">
+					<a href="comment-page-1/index.html#comment-8"><time datetime="2009-03-14T12:44:08+00:00">
+					March 14, 2009 at 12:44 PM					</time></a>
+									</div>
+			
+
+			<div class="comment-content"><p>Hello great guide. I followed it point to point using Xcode 3.1.2 and checker 0.175, but when I run it on a toy project for the mac) where I introduced a few errors.. even though it  just says</p>
+<p>scan-build: Removing directory &#8216;/var/folders/jB/jBcDCHWzH-8NL2tGNUqWzk+++TM/-Tmp-/scan-build-2009-03-14-1&#8242; because it contains no reports.</p>
+<p>?? and there is no scan-build: success or scan-build: error</p>
+<p>any ideas on what is going on here?</p>
+</div>
+
+			<div class="reply">
+							</div>
+		</article>
+
+	</li>
+	<li class="comment even thread-even depth-1" id="li-comment-9">
+		<article id="comment-9" class="comment">
+			<footer>
+				<div class="comment-author vcard">
+										<cite class="fn"><a href='http://fruitstandsoftware.com' rel='external nofollow' class='url'>Michael</a></cite> <span class="says">says:</span>				</div>
+				
+				<div class="comment-meta commentmetadata">
+					<a href="comment-page-1/index.html#comment-9"><time datetime="2009-03-15T08:39:16+00:00">
+					March 15, 2009 at 8:39 AM					</time></a>
+									</div>
+			
+
+			<div class="comment-content"><p>If you&#8217;d like to send me the sample project (with the errors commented) I&#8217;d be more than happy to take a look at it.  It&#8217;s very possible that since my writing of the original article that the output has been changed and they no longer report success or error explicitly.</p>
+</div>
+
+			<div class="reply">
+							</div>
+		</article>
+
+	</li>
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="li-comment-10">
+		<article id="comment-10" class="comment">
+			<footer>
+				<div class="comment-author vcard">
+										<cite class="fn">peter JC</cite> <span class="says">says:</span>				</div>
+				
+				<div class="comment-meta commentmetadata">
+					<a href="comment-page-1/index.html#comment-10"><time datetime="2009-03-21T07:00:02+00:00">
+					March 21, 2009 at 7:00 AM					</time></a>
+									</div>
+			
+
+			<div class="comment-content"><p>I would love to send you a sample project, but it seams to me the the problem is that, even though it finds errors the output is not created? And I of course hoped someone ha seen the same problem</p>
+</div>
+
+			<div class="reply">
+							</div>
+		</article>
+
+	</li>
+	<li class="comment even thread-even depth-1" id="li-comment-11">
+		<article id="comment-11" class="comment">
+			<footer>
+				<div class="comment-author vcard">
+										<cite class="fn"><a href='http://shinkanji.bcerrina.com/' rel='external nofollow' class='url'>Benoit Cerrina</a></cite> <span class="says">says:</span>				</div>
+				
+				<div class="comment-meta commentmetadata">
+					<a href="comment-page-1/index.html#comment-11"><time datetime="2009-04-10T06:33:32+00:00">
+					April 10, 2009 at 6:33 AM					</time></a>
+									</div>
+			
+
+			<div class="comment-content"><p>to Peter JC<br />
+I see the same error but unfortunately haven&#8217;t found a fix as of yet</p>
+</div>
+
+			<div class="reply">
+							</div>
+		</article>
+
+	</li>
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="li-comment-12">
+		<article id="comment-12" class="comment">
+			<footer>
+				<div class="comment-author vcard">
+										<cite class="fn"><a href='http://gregorykaiser.wordpress.com/' rel='external nofollow' class='url'>Greg Kaiser</a></cite> <span class="says">says:</span>				</div>
+				
+				<div class="comment-meta commentmetadata">
+					<a href="comment-page-1/index.html#comment-12"><time datetime="2009-05-09T13:50:09+00:00">
+					May 9, 2009 at 1:50 PM					</time></a>
+									</div>
+			
+
+			<div class="comment-content"><p>I am using 10.5 Mac, sdk 2.2.1, Clang 0.196 and I am not a registered ($99 type) developer.  I get the exact same error. Anyone made progress on this?</p>
+</div>
+
+			<div class="reply">
+							</div>
+		</article>
+
+	</li>
+	<li class="post pingback">
+		<p>Pingback: <a href='http://gregorykaiser.wordpress.com/2009/05/10/getting-clang-to-work-hopefully/' rel='external nofollow' class='url'>Getting Clang to work &#8211; Hopefully &laquo; Greg&#8217;s Online CS 193P Resources</a></p>
+	</li>
+	<li class="comment even thread-even depth-1" id="li-comment-14">
+		<article id="comment-14" class="comment">
+			<footer>
+				<div class="comment-author vcard">
+										<cite class="fn"><a href='http://twitter.com/jdandrea' rel='external nofollow' class='url'>Joe D'Andrea</a></cite> <span class="says">says:</span>				</div>
+				
+				<div class="comment-meta commentmetadata">
+					<a href="comment-page-1/index.html#comment-14"><time datetime="2009-06-18T14:05:45+00:00">
+					June 18, 2009 at 2:05 PM					</time></a>
+									</div>
+			
+
+			<div class="comment-content"><p>Same thing here. I get that error even though I follow all instructions to the letter. :\</p>
+</div>
+
+			<div class="reply">
+							</div>
+		</article>
+
+	</li>
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="li-comment-15">
+		<article id="comment-15" class="comment">
+			<footer>
+				<div class="comment-author vcard">
+										<cite class="fn"><a href='http://twitter.com/jdandrea' rel='external nofollow' class='url'>Joe D'Andrea</a></cite> <span class="says">says:</span>				</div>
+				
+				<div class="comment-meta commentmetadata">
+					<a href="comment-page-1/index.html#comment-15"><time datetime="2009-06-18T14:12:15+00:00">
+					June 18, 2009 at 2:12 PM					</time></a>
+									</div>
+			
+
+			<div class="comment-content"><p>Ahh:</p>
+<p>2009-06-18 15:01:56.229 xcodebuild[1676:613] warning: compiler &#8216;com.apple.compilers.llvm.clang.1_0.analyzer&#8217; is based on missing compiler &#8216;com.apple.compilers.llvm.clang.1_0.analyzer&#8217;</p>
+<p>Methinks that has a little something to do with it. <img src='../../../wp-includes/images/smilies/icon_surprised.gif' alt=':-o' class='wp-smiley' /> </p>
+</div>
+
+			<div class="reply">
+							</div>
+		</article>
+
+	</li>
+	<li class="comment even thread-even depth-1" id="li-comment-16">
+		<article id="comment-16" class="comment">
+			<footer>
+				<div class="comment-author vcard">
+										<cite class="fn"><a href='http://rudifa.wordpress.com/' rel='external nofollow' class='url'>Rudi Farkas</a></cite> <span class="says">says:</span>				</div>
+				
+				<div class="comment-meta commentmetadata">
+					<a href="comment-page-1/index.html#comment-16"><time datetime="2009-06-29T07:25:31+00:00">
+					June 29, 2009 at 7:25 AM					</time></a>
+									</div>
+			
+
+			<div class="comment-content"><p>Hello Michael</p>
+<p>I have been using Clang 0.193 on iPhone projects under SDK 2.2.1 with success (heeding your advice above under iPhone Usage &#8211; many thanks).</p>
+<p>Now I installed the SDK 3.0 and tried to use Clang:<br />
+scan-build -k -v -V xcodebuild -configuration Debug<br />
+As it was failing, I installed the build 0.211 &#8211; same problems.</p>
+<p>1&#8212;<br />
+&#8220;&#8221;"<br />
+Compiler: /Developer/Applications/checker-0.211/libexec/ccc-analyzer<br />
+Reason:   gcc-4.0: installation problem, cannot exec &#8216;/Developer/usr/bin/arm-apple-darwin9-gcc-4.0.1&#8242;: No such file or directory<br />
+&#8220;&#8221;"</p>
+<p>I have a gcc-4.0.1 in<br />
+/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/<br />
+I created a symlink in /Developer/usr/bin/<br />
+arm-apple-darwin9-gcc-4.0.1 -&gt; /Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/arm-apple-darwin9-gcc-4.0.1</p>
+<p>This worked &#8211; on to the next problem</p>
+<p>2&#8212;<br />
+&#8220;&#8221;"<br />
+In file included from /Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator3.0.sdk/System/Library/Frameworks/UIKit.framework/Headers/UIKit.h:31,<br />
+                 from &#8230;<br />
+/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator3.0.sdk/System/Library/Frameworks/UIKit.framework/Headers/UILocalizedIndexedCollation.h:13: error: syntax error before ‘AT_NAME’ token<br />
+/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator3.0.sdk/System/Library/Frameworks/UIKit.framework/Headers/UILocalizedIndexedCollation.h:21: error: syntax error before ‘}’ token<br />
+/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator3.0.sdk/System/Library/Frameworks/UIKit.framework/Headers/UILocalizedIndexedCollation.h:23: fatal error: method definition not in @implementation context<br />
+compilation terminated.<br />
+{standard input}:32:FATAL:.abort  detected.  Assembly stopping.<br />
+&#8220;&#8221;"</p>
+<p>I am stuck here.<br />
+Can you help, or tell me who to report the problem to ?</p>
+<p>Rudi</p>
+</div>
+
+			<div class="reply">
+							</div>
+		</article>
+
+	</li>
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="li-comment-17">
+		<article id="comment-17" class="comment">
+			<footer>
+				<div class="comment-author vcard">
+										<cite class="fn"><a href='http://fruitstandsoftware.com' rel='external nofollow' class='url'>Michael</a></cite> <span class="says">says:</span>				</div>
+				
+				<div class="comment-meta commentmetadata">
+					<a href="comment-page-1/index.html#comment-17"><time datetime="2009-06-29T09:38:54+00:00">
+					June 29, 2009 at 9:38 AM					</time></a>
+									</div>
+			
+
+			<div class="comment-content"><p>Rudi,</p>
+<p>After a short but of Googling I found these two pages that may shed some light on your problem:<br />
+<a href="http://iphonedevelopertips.com/xcode/error-syntax-error-before-at_name-token.html" rel="nofollow">http://iphonedevelopertips.com/xcode/error-syntax-error-before-at_name-token.html</a><br />
+- and -<br />
+<a href="http://www.iphonedevsdk.com/forum/iphone-sdk-tools-utilities/19342-ui-kit-error-sdk-3-0-a.html" rel="nofollow">http://www.iphonedevsdk.com/forum/iphone-sdk-tools-utilities/19342-ui-kit-error-sdk-3-0-a.html</a></p>
+<p>The first one is just a hint about what to look for with your particular error, &#8220;error: syntax error before ‘AT_NAME’ token&#8221;.  What it basically says is that this error shows up you are missing an @end somewhere in one of your included header files.</p>
+<p>The second link says that the missing @end is in UIKit.h and removing that import should fixed the problem.  Personally I find it a little hard to believe that there would be a problem in something as fundamental as UIKit.h, but check it out and see what you get.  My typical rule for bugs like this is that 99% of the time the bug is in your code &#8211; the other 1% of the time the bug is also in your code.  Let me know what you come up with, I&#8217;m interested to see how this works out.  If you are still running into problems and can send me your project I&#8217;d be more than happy to put a fresh set of eyes on it.</p>
+<p>Best of luck,<br />
+     Michael</p>
+</div>
+
+			<div class="reply">
+							</div>
+		</article>
+
+	</li>
+	<li class="comment even thread-even depth-1" id="li-comment-18">
+		<article id="comment-18" class="comment">
+			<footer>
+				<div class="comment-author vcard">
+										<cite class="fn"><a href='http://www.lusine.ch/' rel='external nofollow' class='url'>Manu</a></cite> <span class="says">says:</span>				</div>
+				
+				<div class="comment-meta commentmetadata">
+					<a href="comment-page-1/index.html#comment-18"><time datetime="2009-06-30T17:20:42+00:00">
+					June 30, 2009 at 5:20 PM					</time></a>
+									</div>
+			
+
+			<div class="comment-content"><p>try to &#8220;Clean All Targets&#8221; in build menu before launching clang. If clang doesn&#8217;t build it itself, it has nothing to say <img src='../../../wp-includes/images/smilies/icon_wink.gif' alt=';-)' class='wp-smiley' /> </p>
+</div>
+
+			<div class="reply">
+							</div>
+		</article>
+
+	</li>
+	<li class="post pingback">
+		<p>Pingback: <a href='http://metosphere.com/blog/2009/07/06/clang-for-iphone-syntax-error-before-%E2%80%98at_name%E2%80%99-token/' rel='external nofollow' class='url'>Clang for iPhone - syntax error before ‘AT_NAME’ token</a></p>
+	</li>
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="li-comment-20">
+		<article id="comment-20" class="comment">
+			<footer>
+				<div class="comment-author vcard">
+										<cite class="fn"><a href='http://rudifa.wordpress.com/' rel='external nofollow' class='url'>Rudi Farkas</a></cite> <span class="says">says:</span>				</div>
+				
+				<div class="comment-meta commentmetadata">
+					<a href="comment-page-1/index.html#comment-20"><time datetime="2009-07-11T18:14:41+00:00">
+					July 11, 2009 at 6:14 PM					</time></a>
+									</div>
+			
+
+			<div class="comment-content"><p>Hello Michael</p>
+<p>I followed your links and I googled some more for &#8220;syntax error before ‘AT_NAME’ token&#8221;. Manifestly many developers are seeing this problem, and the workaround consists in commenting out line 31 in UIKit.h : #import</p>
+<p>I confirm that this workaround &#8230; works.</p>
+<p>I went one step further and looked into UILocalizedIndexedCollation.h.</p>
+<p>Line 13 &#8211; the first one showing in the failing diagnostic, is<br />
+UIKIT_EXTERN @interface UILocalizedIndexedCollation : NSObject</p>
+<p>Deleting the UIKIT_EXTERN or commenting it out with /**/also constitutes an effective workaround.</p>
+<p>I have no idea why this would be so. UIKIT_EXTERN is defined in UIKitDefines.h</p>
+<p>#ifdef __cplusplus<br />
+#define UIKIT_EXTERN		extern &#8220;C&#8221; __attribute__((visibility (&#8220;default&#8221;)))<br />
+#else<br />
+#define UIKIT_EXTERN	        extern __attribute__((visibility (&#8220;default&#8221;)))<br />
+#endif</p>
+<p>and it is used in many other .h files in UIKit.</p>
+<p>I reproduced the problem on a freshly made SDK 3.0 iPhone project. If you want to investigate, try to follow the following steps :</p>
+<p>1. Create a fresh 3.0 View-based project TryClangOn30</p>
+<p>2. scan-build -k -v -V xcodebuild -configuration Debug</p>
+<p>Code Sign error: The identity &#8216;iPhone Developer&#8217; doesn&#8217;t match any valid certificate/private key pair in the default keychain<br />
+** BUILD FAILED **</p>
+<p>3. Change General : Base SDK for All Configurations : iPhoneSimulator 3.0<br />
+    Change Build : Code Signing Identity : Don&#8217;t Code Sign<br />
+                          Any iPhone OS Device : Don&#8217;t Code Sign</p>
+<p>4. scan-build -k -v -V xcodebuild -configuration Debug</p>
+<p>In file included from /Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator3.0.sdk/System/Library/Frameworks/UIKit.framework/Headers/UIKit.h:31,<br />
+                 from /Users/rudifarkas/iPhoneDev/RudisProjects/TryClangOn30/TryClangOn30_Prefix.pch:7,<br />
+                 from :1:<br />
+/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator3.0.sdk/System/Library/Frameworks/UIKit.framework/Headers/UILocalizedIndexedCollation.h:13: error: syntax error before ‘AT_NAME’ token<br />
+/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator3.0.sdk/System/Library/Frameworks/UIKit.framework/Headers/UILocalizedIndexedCollation.h:21: error: syntax error before ‘}’ token<br />
+/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator3.0.sdk/System/Library/Frameworks/UIKit.framework/Headers/UILocalizedIndexedCollation.h:23: fatal error: method definition not in @implementation context<br />
+compilation terminated.<br />
+{standard input}:32:FATAL:.abort  detected.  Assembly stopping.</p>
+<p>This is as far as I got &#8211; not very far. Any ideas on the real nature of this problem would be appreciated.</p>
+<p>Rudi</p>
+</div>
+
+			<div class="reply">
+							</div>
+		</article>
+
+	</li>
+	<li class="comment even thread-even depth-1" id="li-comment-21">
+		<article id="comment-21" class="comment">
+			<footer>
+				<div class="comment-author vcard">
+										<cite class="fn">David</cite> <span class="says">says:</span>				</div>
+				
+				<div class="comment-meta commentmetadata">
+					<a href="comment-page-1/index.html#comment-21"><time datetime="2009-07-12T03:29:00+00:00">
+					July 12, 2009 at 3:29 AM					</time></a>
+									</div>
+			
+
+			<div class="comment-content"><p>Hi,</p>
+<p>I followed this tutorial to the &#8216;t&#8217;, however in the terminal window I get the following error &#8220;-bash: scan-build: command not found&#8221;.</p>
+<p>Can someone point me in the right direction. Thanks.</p>
+</div>
+
+			<div class="reply">
+							</div>
+		</article>
+
+	</li>
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="li-comment-22">
+		<article id="comment-22" class="comment">
+			<footer>
+				<div class="comment-author vcard">
+										<cite class="fn"><a href='http://rudifa.wordpress.com/' rel='external nofollow' class='url'>Rudi Farkas</a></cite> <span class="says">says:</span>				</div>
+				
+				<div class="comment-meta commentmetadata">
+					<a href="comment-page-1/index.html#comment-22"><time datetime="2009-07-12T16:01:18+00:00">
+					July 12, 2009 at 4:01 PM					</time></a>
+									</div>
+			
+
+			<div class="comment-content"><p>David</p>
+<p>It looks like scan-build is not in your $PATH.<br />
+Where did you put scan-build? &#8211; use Spotlight to find it<br />
+What directories are in your $PATH? &#8211; run echo $PATH to find out</p>
+<p>Rudi</p>
+</div>
+
+			<div class="reply">
+							</div>
+		</article>
+
+	</li>
+	<li class="comment even thread-even depth-1" id="li-comment-23">
+		<article id="comment-23" class="comment">
+			<footer>
+				<div class="comment-author vcard">
+										<cite class="fn"><a href='http://rudifa.wordpress.com/' rel='external nofollow' class='url'>Rudi Farkas</a></cite> <span class="says">says:</span>				</div>
+				
+				<div class="comment-meta commentmetadata">
+					<a href="comment-page-1/index.html#comment-23"><time datetime="2009-07-12T16:40:39+00:00">
+					July 12, 2009 at 4:40 PM					</time></a>
+									</div>
+			
+
+			<div class="comment-content"><p>Hello MIchael and all</p>
+<p>I found the solution to the  problem with UILocalizedIndexedCollation.h in thread :<br />
+<a href="http://stackoverflow.com/questions/1078001/clang-giving-errors-complaining-about-defective-header-file-uilocalizedindexedcol" rel="nofollow">http://stackoverflow.com/questions/1078001/clang-giving-errors-complaining-about-defective-header-file-uilocalizedindexedcol</a></p>
+<p>It works.<br />
+Rudi</p>
+<p>The problem comes from SDK 3.0 which now use gcc 4.2 but scan-build still use /usr/bin/gcc. So you need to tell scan-build to use /usr/bin/gcc-4.2 instead.</p>
+<p>scan-build &#8211;use-cc=/usr/bin/gcc-4.2 xcodebuild -configuration Debug</p>
+<p>Et voila!</p>
+<p>answered Jul 8 at 9:07<br />
+Djiss</p>
+</div>
+
+			<div class="reply">
+							</div>
+		</article>
+
+	</li>
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="li-comment-24">
+		<article id="comment-24" class="comment">
+			<footer>
+				<div class="comment-author vcard">
+										<cite class="fn"><a href='http://fruitstandsoftware.com' rel='external nofollow' class='url'>Michael</a></cite> <span class="says">says:</span>				</div>
+				
+				<div class="comment-meta commentmetadata">
+					<a href="comment-page-1/index.html#comment-24"><time datetime="2009-07-13T10:11:21+00:00">
+					July 13, 2009 at 10:11 AM					</time></a>
+									</div>
+			
+
+			<div class="comment-content"><p>Very nice!  I was fairly certain that commenting out sections of library header files was not the way to go, so thanks for tracking down the answer!</p>
+</div>
+
+			<div class="reply">
+							</div>
+		</article>
+
+	</li>
+	<li class="comment even thread-even depth-1" id="li-comment-25">
+		<article id="comment-25" class="comment">
+			<footer>
+				<div class="comment-author vcard">
+										<cite class="fn"><a href='http://fruitstandsoftware.com' rel='external nofollow' class='url'>Michael</a></cite> <span class="says">says:</span>				</div>
+				
+				<div class="comment-meta commentmetadata">
+					<a href="comment-page-1/index.html#comment-25"><time datetime="2009-07-13T10:15:22+00:00">
+					July 13, 2009 at 10:15 AM					</time></a>
+									</div>
+			
+
+			<div class="comment-content"><p>David, how did you make out?  Did Rudi&#8217;s suggestion of putting scan-build in your $PATH work out?</p>
+<p>Make sure that you&#8217;ve done steps 1 &#038; 2 in the Installation section above.  Once they are done you should have a file named scan-build in /usr/local/bin</p>
+</div>
+
+			<div class="reply">
+							</div>
+		</article>
+
+	</li>
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="li-comment-26">
+		<article id="comment-26" class="comment">
+			<footer>
+				<div class="comment-author vcard">
+										<cite class="fn">JCoop</cite> <span class="says">says:</span>				</div>
+				
+				<div class="comment-meta commentmetadata">
+					<a href="comment-page-1/index.html#comment-26"><time datetime="2009-07-14T14:08:51+00:00">
+					July 14, 2009 at 2:08 PM					</time></a>
+									</div>
+			
+
+			<div class="comment-content"><p>I have done this but it still gives me the errors. At this point I just want to remove clang because my project was working perfectly before. How can I remove clang so that it doesn&#8217;t give me these errors with perfectly written library headers.</p>
+</div>
+
+			<div class="reply">
+							</div>
+		</article>
+
+	</li>
+	<li class="comment even thread-even depth-1" id="li-comment-27">
+		<article id="comment-27" class="comment">
+			<footer>
+				<div class="comment-author vcard">
+										<cite class="fn"><a href='http://fruitstandsoftware.com' rel='external nofollow' class='url'>Michael</a></cite> <span class="says">says:</span>				</div>
+				
+				<div class="comment-meta commentmetadata">
+					<a href="comment-page-1/index.html#comment-27"><time datetime="2009-07-14T15:59:27+00:00">
+					July 14, 2009 at 3:59 PM					</time></a>
+									</div>
+			
+
+			<div class="comment-content"><p>J,</p>
+<p>You shouldn&#8217;t need to uninstall Clang as it does not modify your source code.  If you made changes to any library header files either recover an old version of them from a Time Machine backup or reinstall the SDK.</p>
+<p>&#8211; Michael</p>
+</div>
+
+			<div class="reply">
+							</div>
+		</article>
+
+	</li>
+	<li class="post pingback">
+		<p>Pingback: <a href='http://fruitstandsoftware.com/blog/2009/07/iphone-development-updating-project-hint/' rel='external nofollow' class='url'>iPhone Development: Updating Project Hint &laquo; Core Fruition</a></p>
+	</li>
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="li-comment-29">
+		<article id="comment-29" class="comment">
+			<footer>
+				<div class="comment-author vcard">
+										<cite class="fn">David P.</cite> <span class="says">says:</span>				</div>
+				
+				<div class="comment-meta commentmetadata">
+					<a href="comment-page-1/index.html#comment-29"><time datetime="2009-07-31T15:38:47+00:00">
+					July 31, 2009 at 3:38 PM					</time></a>
+									</div>
+			
+
+			<div class="comment-content"><p>Thanks very much for this entry.  I followed your directions to use the Clang Static Analyser on my iPhone app and it seemed to work.  I was surprised that my application was already perfect and I got the message:</p>
+<p>** BUILD SUCCEEDED **<br />
+scan-build: Removing directory &#8216;/var/folders/sn/snToecKZEieI90xsA+sCSE+++TI/-Tmp-/scan-build-2009-07-31-1&#8242; because it contains no reports.</p>
+<p>I tried inserting some code which I thought should trip the analysis.  Still get the same message.  If I insert something which causes the compile to fail, the build fails.   If I insert a memory leak, it is not discovered.  I assume that I am doing something wrong, but don&#8217;t have a clue where to look.</p>
+</div>
+
+			<div class="reply">
+							</div>
+		</article>
+
+	</li>
+	<li class="comment even thread-even depth-1" id="li-comment-30">
+		<article id="comment-30" class="comment">
+			<footer>
+				<div class="comment-author vcard">
+										<cite class="fn">Maulik</cite> <span class="says">says:</span>				</div>
+				
+				<div class="comment-meta commentmetadata">
+					<a href="comment-page-1/index.html#comment-30"><time datetime="2009-08-01T08:10:29+00:00">
+					August 1, 2009 at 8:10 AM					</time></a>
+									</div>
+			
+
+			<div class="comment-content"><p>Hi Michael thanks for the post. Even i am getting the same error like David P.</p>
+</div>
+
+			<div class="reply">
+							</div>
+		</article>
+
+	</li>
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="li-comment-31">
+		<article id="comment-31" class="comment">
+			<footer>
+				<div class="comment-author vcard">
+										<cite class="fn">Maulik</cite> <span class="says">says:</span>				</div>
+				
+				<div class="comment-meta commentmetadata">
+					<a href="comment-page-1/index.html#comment-31"><time datetime="2009-08-01T08:39:57+00:00">
+					August 1, 2009 at 8:39 AM					</time></a>
+									</div>
+			
+
+			<div class="comment-content"><p>Type your comment here<br />
+<blockquote cite="#comment-body-5047">
+<strong><a href="index.html#comment-5047" rel="nofollow">Maulik</a> :</strong></p>
+<p>         Hi Michael thanks for the post. I tried all the tweaks that you mentioned and finally could get the complete error report on 2.2.1 build. But when i build a project of 3.0 there is an error. I am posting the error message:</p>
+<p>The following build commands failed:<br />
+SampleApp:</p>
+<p>	CompileC build/SampleApp.build/Release-iphonesimulator/SampleApp.build/Objects-normal/i386/RootViewController.o /Developer/Maulik/SampleApp/Classes/RootViewController.m normal i386 objective-c com.apple.compilers.gcc.4_0</p>
+<p>	CompileC build/SampleApp.build/Release-iphonesimulator/SampleApp.build/Objects-normal/i386/FormPage.o /Developer/Maulik/SampleApp/Classes/FormPage.m normal i386 objective-c com.apple.compilers.gcc.4_0</p>
+<p>	CompileC build/SampleApp.build/Release-iphonesimulator/SampleApp.build/Objects-normal/i386/AccountDetails.o /Developer/Maulik/SampleApp/Classes/AccountDetails.m normal i386 objective-c com.apple.compilers.gcc.4_0</p>
+<p>This was the error message that i got. It seems it cant build this .m files and convert them to .o I couldnot understand what is wrong. It would be great if you can show some pointers as to why this happening.<br />
+ .<br />
+         <a></a>
+       </p></blockquote>
+</div>
+
+			<div class="reply">
+							</div>
+		</article>
+
+	</li>
+	<li class="comment even thread-even depth-1" id="li-comment-32">
+		<article id="comment-32" class="comment">
+			<footer>
+				<div class="comment-author vcard">
+										<cite class="fn">Brian</cite> <span class="says">says:</span>				</div>
+				
+				<div class="comment-meta commentmetadata">
+					<a href="comment-page-1/index.html#comment-32"><time datetime="2009-08-06T16:29:30+00:00">
+					August 6, 2009 at 4:29 PM					</time></a>
+									</div>
+			
+
+			<div class="comment-content"><p>Howdy,</p>
+<p>I&#8217;ve been using clang off and on with my iPhone app. It seems that we get a new sdk every month or so and every time that happens clang stops working.  Since the docs, ahem, suck I gotta say that it&#8217;s a pain to figure out what changed each time and make it work.</p>
+<p>I think I&#8217;ve finally figured it out and it ends up being simpler than I thought.  This command line works for me today with the iPhone 3.1beta3 SDK installed:</p>
+<p>scan-build -k -V xcodebuild -sdk iphonesimulator3.1 -configuration Debug</p>
+<p>Some comments: as some have mentioned in previous comments xcodebuild needs to use the correct compiler. Rather than using &#8211;use-cc I think that specifying the sdk on the command line also makes xcodebuild use the correct compiler. If you type</p>
+<p>xcodebuild -showsdks</p>
+<p>It shows the names of all the sdks that it knows about.  You must use a Simulator sdk (for some reason). You also need to specify the build configuration as Debug. Release doesn&#8217;t work for some reason. If you have more than one target you also need to specify the target.</p>
+<p>Using this command line I don&#8217;t have to turn off code signing in the project and it doesn&#8217;t matter what the base sdk, active sdk etc are in the project.</p>
+<p>I&#8217;m hoping that when I get the next beta this command line will still work.</p>
+</div>
+
+			<div class="reply">
+							</div>
+		</article>
+
+	</li>
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="li-comment-33">
+		<article id="comment-33" class="comment">
+			<footer>
+				<div class="comment-author vcard">
+										<cite class="fn"><a href='http://fruitstandsoftware.com' rel='external nofollow' class='url'>Michael</a></cite> <span class="says">says:</span>				</div>
+				
+				<div class="comment-meta commentmetadata">
+					<a href="comment-page-1/index.html#comment-33"><time datetime="2009-08-07T12:39:10+00:00">
+					August 7, 2009 at 12:39 PM					</time></a>
+									</div>
+			
+
+			<div class="comment-content"><p>Thanks for the great tip, Brian.</p>
+</div>
+
+			<div class="reply">
+							</div>
+		</article>
+
+	</li>
+	<li class="comment even thread-even depth-1" id="li-comment-34">
+		<article id="comment-34" class="comment">
+			<footer>
+				<div class="comment-author vcard">
+										<cite class="fn"><a href='http://fruitstandsoftware.com' rel='external nofollow' class='url'>Michael</a></cite> <span class="says">says:</span>				</div>
+				
+				<div class="comment-meta commentmetadata">
+					<a href="comment-page-1/index.html#comment-34"><time datetime="2009-08-07T12:43:07+00:00">
+					August 7, 2009 at 12:43 PM					</time></a>
+									</div>
+			
+
+			<div class="comment-content"><p>Maulik, check out Brian&#8217;s comment below and see if that helps you out.</p>
+</div>
+
+			<div class="reply">
+							</div>
+		</article>
+
+	</li>
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="li-comment-35">
+		<article id="comment-35" class="comment">
+			<footer>
+				<div class="comment-author vcard">
+										<cite class="fn"><a href='http://fruitstandsoftware.com' rel='external nofollow' class='url'>Michael</a></cite> <span class="says">says:</span>				</div>
+				
+				<div class="comment-meta commentmetadata">
+					<a href="comment-page-1/index.html#comment-35"><time datetime="2009-08-07T12:45:02+00:00">
+					August 7, 2009 at 12:45 PM					</time></a>
+									</div>
+			
+
+			<div class="comment-content"><p>David,  that&#8217;s very strange, I haven&#8217;t run into that issue.  Check out Brian&#8217;s comment below and see if that helps you out.</p>
+</div>
+
+			<div class="reply">
+							</div>
+		</article>
+
+	</li>
+	<li class="comment even thread-even depth-1" id="li-comment-36">
+		<article id="comment-36" class="comment">
+			<footer>
+				<div class="comment-author vcard">
+										<cite class="fn"><a href='http://twitter.com/jdandrea' rel='external nofollow' class='url'>Joe D'Andrea</a></cite> <span class="says">says:</span>				</div>
+				
+				<div class="comment-meta commentmetadata">
+					<a href="comment-page-1/index.html#comment-36"><time datetime="2009-08-09T16:03:25+00:00">
+					August 9, 2009 at 4:03 PM					</time></a>
+									</div>
+			
+
+			<div class="comment-content"><p>Has anyone been able to make Clang play nicely with Joe Hewitt&#8217;s Three20 library?</p>
+<p>When I run Clang on Three20 itself, it&#8217;s fine. When I run Clang on my app (which uses libThree20.a), Clang (via StaticAnalyzer) reports: &#8220;libThree20.a, file is not of required architecture&#8221; &#8230; followed by a lot of undefined symbols (of course) and no output. <img src='../../../wp-includes/images/smilies/icon_sad.gif' alt=':(' class='wp-smiley' /> </p>
+<p>Clues welcome/appreciated!</p>
+</div>
+
+			<div class="reply">
+							</div>
+		</article>
+
+	</li>
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="li-comment-37">
+		<article id="comment-37" class="comment">
+			<footer>
+				<div class="comment-author vcard">
+										<cite class="fn"><a href='http://twitter.com/jdandrea' rel='external nofollow' class='url'>Joe D'Andrea</a></cite> <span class="says">says:</span>				</div>
+				
+				<div class="comment-meta commentmetadata">
+					<a href="comment-page-1/index.html#comment-37"><time datetime="2009-08-09T16:07:33+00:00">
+					August 9, 2009 at 4:07 PM					</time></a>
+									</div>
+			
+
+			<div class="comment-content"><p>I spoke too soon! It works. It was pilot error. In short, I did everything EXCEPT add Three20 as a direct dependency. The app compiled in spite of that, but Clang didn&#8217;t buy it. <img src='../../../wp-includes/images/smilies/icon_smile.gif' alt=':)' class='wp-smiley' /> </p>
+<p>For those experiencing similar issues, read the README that comes with Three20 and follow &#8220;Adding Three20 to your project&#8221; step by step. (I mistakenly skipped Step 4! Tsk-tsk.) Once you do that, I&#8217;m confident it will work just fine.</p>
+</div>
+
+			<div class="reply">
+							</div>
+		</article>
+
+	</li>
+	<li class="comment even thread-even depth-1" id="li-comment-38">
+		<article id="comment-38" class="comment">
+			<footer>
+				<div class="comment-author vcard">
+										<cite class="fn">Luke Du</cite> <span class="says">says:</span>				</div>
+				
+				<div class="comment-meta commentmetadata">
+					<a href="comment-page-1/index.html#comment-38"><time datetime="2009-08-11T23:51:54+00:00">
+					August 11, 2009 at 11:51 PM					</time></a>
+									</div>
+			
+
+			<div class="comment-content"><p>Hi there,</p>
+<p>I&#8217;ve got an error I just can not resolve whatsoever,</p>
+<p>When I run &#8220;scan-build -k -V xcodebuild -configuration Debug -sdk iphonesimulator3.0&#8243;</p>
+<p>Error: &#8220;scan-build: The directory &#8216;/tmp&#8217; does not exist or cannot be accessed.&#8221;</p>
+<p>Look forward to hearing from you soon.</p>
+</div>
+
+			<div class="reply">
+							</div>
+		</article>
+
+	</li>
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="li-comment-39">
+		<article id="comment-39" class="comment">
+			<footer>
+				<div class="comment-author vcard">
+										<cite class="fn"><a href='http://fruitstandsoftware.com' rel='external nofollow' class='url'>Michael</a></cite> <span class="says">says:</span>				</div>
+				
+				<div class="comment-meta commentmetadata">
+					<a href="comment-page-1/index.html#comment-39"><time datetime="2009-08-12T15:28:26+00:00">
+					August 12, 2009 at 3:28 PM					</time></a>
+									</div>
+			
+
+			<div class="comment-content"><p>Luke,</p>
+<p>Open Terminal.app and type &#8216;ls -l /&#8217; (without the quotes).</p>
+<p>If the tmp directory does not exist you can create it by typing &#8216;mkdir /tmp&#8217; (again, without the quotes).</p>
+<p>If the tmp directory does exist you will need to modify your permissions on it.  Take a look at the man page for chmod (&#8216;man chmod&#8217;) to see how to modify the permissions of this directory for your user.  You may have to be root to modify the permissions.</p>
+</div>
+
+			<div class="reply">
+							</div>
+		</article>
+
+	</li>
+	<li class="comment even thread-even depth-1" id="li-comment-40">
+		<article id="comment-40" class="comment">
+			<footer>
+				<div class="comment-author vcard">
+										<cite class="fn">Scott</cite> <span class="says">says:</span>				</div>
+				
+				<div class="comment-meta commentmetadata">
+					<a href="comment-page-1/index.html#comment-40"><time datetime="2009-08-18T09:09:30+00:00">
+					August 18, 2009 at 9:09 AM					</time></a>
+									</div>
+			
+
+			<div class="comment-content"><p>Is clang working for anyone else when analyzing a project that contains a 3.0 library such as MessageUI?</p>
+<p>I keep getting an error &#8220;MessageUI/MessageUI.h: No such file or directory&#8221;.</p>
+<p>It builds fine if I just do an &#8216;xcodebuild&#8217; or build within xcode.</p>
+<p>I have tried setting the basesdk for all to 2.2, and I have tried :</p>
+<p>scan-build -k -V xcodebuild -configuration Debug -sdk iphonesimulator2.2</p>
+<p>scan-build -k -V xcodebuild -configuration Debug -sdk iphonesimulator2.1</p>
+<p>scan-build -k -V xcodebuild -configuration Debug</p>
+<p>scan-build -k -V xcodebuild</p>
+<p>Doing some searches it seems like it may have to do witht the fact that this is a 3.0 library ?</p>
+</div>
+
+			<div class="reply">
+							</div>
+		</article>
+
+	</li>
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="li-comment-41">
+		<article id="comment-41" class="comment">
+			<footer>
+				<div class="comment-author vcard">
+										<cite class="fn">Scott</cite> <span class="says">says:</span>				</div>
+				
+				<div class="comment-meta commentmetadata">
+					<a href="comment-page-1/index.html#comment-41"><time datetime="2009-08-18T09:21:17+00:00">
+					August 18, 2009 at 9:21 AM					</time></a>
+									</div>
+			
+
+			<div class="comment-content"><p>I just found my own answer:</p>
+<p>THIS WORKED:</p>
+<p>scan-build -k -V xcodebuild -configuration Debug -sdk iphonesimulator3.0</p>
+</div>
+
+			<div class="reply">
+							</div>
+		</article>
+
+	</li>
+	<li class="comment even thread-even depth-1" id="li-comment-42">
+		<article id="comment-42" class="comment">
+			<footer>
+				<div class="comment-author vcard">
+										<cite class="fn"><a href='http://huyzing.com' rel='external nofollow' class='url'>Huy</a></cite> <span class="says">says:</span>				</div>
+				
+				<div class="comment-meta commentmetadata">
+					<a href="comment-page-1/index.html#comment-42"><time datetime="2009-09-07T06:17:28+00:00">
+					September 7, 2009 at 6:17 AM					</time></a>
+									</div>
+			
+
+			<div class="comment-content"><p>That worked for me on the first shot, thanks Brian.  Beautiful tool.  Great time saver.</p>
+</div>
+
+			<div class="reply">
+							</div>
+		</article>
+
+	</li>
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="li-comment-43">
+		<article id="comment-43" class="comment">
+			<footer>
+				<div class="comment-author vcard">
+										<cite class="fn">Brett</cite> <span class="says">says:</span>				</div>
+				
+				<div class="comment-meta commentmetadata">
+					<a href="comment-page-1/index.html#comment-43"><time datetime="2009-12-13T13:03:08+00:00">
+					December 13, 2009 at 1:03 PM					</time></a>
+									</div>
+			
+
+			<div class="comment-content"><p>I am also having the &#8220;scan-build: Removing directory because it contains no reports.&#8221; problem.  I have tried changing the project properties to &#8220;iphone simulator 3.1&#8243; and &#8220;no code signing&#8221;.  I have moved the binaries to /usr/local/bin.  I did a clean in Xcode.  I&#8217;ve tried &#8220;–use-cc=/usr/bin/gcc-4.2&#8243; (this created another error about an invalid base, and I noticed that /usr/bin/gcc was already pointing to /usr/bin/gcc-4.2).  I am using version 2.31.  I am not seeing any errors related to SSE in the console.  Any other suggestions?</p>
+</div>
+
+			<div class="reply">
+							</div>
+		</article>
+
+	</li>
+	<li class="comment even thread-even depth-1" id="li-comment-44">
+		<article id="comment-44" class="comment">
+			<footer>
+				<div class="comment-author vcard">
+										<cite class="fn">Brett</cite> <span class="says">says:</span>				</div>
+				
+				<div class="comment-meta commentmetadata">
+					<a href="comment-page-1/index.html#comment-44"><time datetime="2009-12-13T13:04:38+00:00">
+					December 13, 2009 at 1:04 PM					</time></a>
+									</div>
+			
+
+			<div class="comment-content"><p>I forgot to mention the command I am using is</p>
+<p>scan-build -k -V xcodebuild -sdk iphonesimulator3.1 -configuration Debug</p>
+</div>
+
+			<div class="reply">
+							</div>
+		</article>
+
+	</li>
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="li-comment-45">
+		<article id="comment-45" class="comment">
+			<footer>
+				<div class="comment-author vcard">
+										<cite class="fn"><a href='http://fruitstandsoftware.com' rel='external nofollow' class='url'>Michael</a></cite> <span class="says">says:</span>				</div>
+				
+				<div class="comment-meta commentmetadata">
+					<a href="comment-page-1/index.html#comment-45"><time datetime="2009-12-14T10:12:34+00:00">
+					December 14, 2009 at 10:12 AM					</time></a>
+									</div>
+			
+
+			<div class="comment-content"><p>Brett,</p>
+<p>I&#8217;m afraid that I&#8217;m in the dark on this one too, hopefully someone else will have some more knowledge.  What version of OS X are you running?  If you are using Snow Leopard the static analyzer tool is now built into Xcode, so that may fix/bypass your problem completely.</p>
+<p>Here&#8217;s a link: <a href="http://developer.apple.com/mac/library/featuredarticles/StaticAnalysis/index.html" rel="nofollow">http://developer.apple.com/mac/library/featuredarticles/StaticAnalysis/index.html</a></p>
+<p>Best,<br />
+     Michael</p>
+</div>
+
+			<div class="reply">
+							</div>
+		</article>
+
+	</li>
+		</ol>
+
+		
+	
+	
+									
+				
+									<p class="must-log-in">You must be <a href="../../../wp-login.php-redirect_to=http_%7C%7Cwww.fruitstandsoftware.com%7Cblog%7C2008%7C08%7Cfinding-memory-leaks-with-the-llvmclang-static-analyzer%7C.html">logged in</a> to post a comment.</p>												</div>
+		
+</div>
+
+			
+			</div>
+		</div>
+
+		
+						
+			
+				
+						
+				</aside>
+
+						</div>
+			
+			
+							
+				</aside>
+						</div>
+			
+			
+							
+					
+					<ul>
+												
+											</ul>
+				</aside>
+						</div>
+		</div>
+
+</div>
+</div>
+
+
+<script type='text/javascript'>
+/* <![CDATA[ */
+var viewsCacheL10n = {"admin_ajax_url":"http:\/\/www.fruitstandsoftware.com\/blog\/wp-admin\/admin-ajax.php","post_id":"15"};
+/* ]]> */
+</script>
+<script type='text/javascript' src='../../../wp-content/plugins/wp-postviews/postviews-cache-ver=1.64.js'></script>
+<script type='text/javascript' src='../../../wp-content/themes/landscape/js/small-menu-ver=20120206.js'></script>
+
+</body>
+</html>
+
+
+

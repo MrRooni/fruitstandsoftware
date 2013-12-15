@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="initial-scale=1">
+<title>iLife 09 Won&#039;t Install When the iPhone Simulator Is Running | Core Fruition</title>
+
+
+			<link rel="alternate" type="application/rss+xml" title="Core Fruition &raquo; iLife 09 Won&#039;t Install When the iPhone Simulator Is Running Comments Feed" href="feed/index.html" />
+<link rel='prev' title='Core Data Code Generation' href='../../09/core-data-code-generation/index.html' />
+<link rel='next' title='Bottom Bars in Interface Builder' href='../../12/bottom-bars-in-interface-builder/index.html' />
+</head>
+
+<body class="single single-post postid-362 single-format-standard custom-background group-blog">
+
+
+
+		
+			
+
+			
+				
+<article id="post-362" class="post-362 post type-post status-publish format-standard hentry category-uncategorized">
+	
+		<h1>iLife 09 Won&#039;t Install When the iPhone Simulator Is Running</h1>
+
+		
+			<a href="index.html" title="7:59 PM" rel="bookmark"><time class="entry-date" datetime="2009-10-20T19:59:43+00:00">October 20, 2009</time></a>		</div>
+	
+
+	
+		<p>This post is a bit of a deviation from my usual posts, but it falls into the <strong>something-that-bit-me-that-might-bite-you-too-so-here&#8217;s-how-to-fix-it</strong> category.</p>
+<p>I recently upgraded to Snow Leopard by doing an erase and install.  After getting everything back up and running I realized that I still needed to install iLife.  I popped in disc 2 of my MacBook Pro install DVDs and proceeded to open the Install Bundled Software installer.  After customizing my options I hit the install button and waited. And waited. And waited.  The installer never got past the Preparing Bundled Applications stage.</p>
+<p>I checked out the console and saw a series of messages that ended with:<br />
+<code>10/17/09 4:23:10 PM	Installer[8135]	*** -[NSMachPort handlePortMessage:]: dropping incoming DO message because the connection or ports are invalid</code></p>
+<p>I decided to try a restart to see if that would fix my problem but shortly after restarting and before I could try my install again I cranked open Xcode and the iPhone simulator to check out something in <a href="http://www.getsportsbookapp.com/">my latest project</a>.  Remember this part of the story, because it&#8217;s important.</p>
+<p>A few days later I remembered that I still needed to install iLife and grabbed my MacBook Pro installation discs again. I kicked off the installation and instantly hit the same issue.  The installer never got past the Preparing Application Bundles stage.  I opened Console.app again and saw the same message:<br />
+<code>10/20/09 7:39:40 PM	Installer[9025]	*** -[NSMachPort handlePortMessage:]: dropping incoming DO message because the connection or ports are invalid</code></p>
+<p>I decided to turn to Google and happily came across this gem of a radar filing: <a href="http://www.openradar.appspot.com/7105069">Installer hanging for any installer after uptime of X hours</a>.  If you read through the comments on that bug you will find that the installer hang isn&#8217;t based on uptime, but rather on the iPhone Simulator running.  I had been working on an iPhone project both times I tried to install iLife and it was causing the installer to hang (for some inexplicable reason).</p>
+<p>I quit the simulator and Installer.app immediately stopped trying to prepare the bundled applications and displayed an error.  I quit the installer, tried again, and voila, everything worked as it should.</p>
+			</div>
+
+	
+		This entry was posted in <a href="../../../category/uncategorized/index.html" title="View all posts in Uncategorized" rel="category tag">Uncategorized</a>. 
+			
+</article>
+
+					<nav role="navigation" id="nav-below" class="site-navigation post-navigation">
+		
+
+	
+		<div class="nav-previous"><a href="../../09/core-data-code-generation/index.html" rel="prev"><span class="meta-nav">&larr;</span> Core Data Code Generation</a></div>		<div class="nav-next"><a href="../../12/bottom-bars-in-interface-builder/index.html" rel="next">Bottom Bars in Interface Builder <span class="meta-nav">&rarr;</span></a></div>
+	
+	</nav>
+	
+				
+			
+			</div>
+		</div>
+
+		
+						
+			
+				
+						
+				</aside>
+
+						</div>
+			
+			
+							
+					<h1 class="widget-title">Archives</h1>
+					<ul>
+							<li><a href='../../../2013/05/index.html'>May 2013</a></li>
+	<li><a href='../../../2013/04/index.html'>April 2013</a></li>
+	<li><a href='../../../2013/02/index.html'>February 2013</a></li>
+	<li><a href='../../../2012/08/index.html'>August 2012</a></li>
+	<li><a href='../../../2012/07/index.html'>July 2012</a></li>
+	<li><a href='../../../2012/06/index.html'>June 2012</a></li>
+	<li><a href='../../../2012/05/index.html'>May 2012</a></li>
+	<li><a href='../../../2010/06/index.html'>June 2010</a></li>
+	<li><a href='../../../2010/03/index.html'>March 2010</a></li>
+	<li><a href='../../../2010/01/index.html'>January 2010</a></li>
+	<li><a href='../../12/index.html'>December 2009</a></li>
+	<li><a href='../index.html'>October 2009</a></li>
+	<li><a href='../../09/index.html'>September 2009</a></li>
+	<li><a href='../../08/index.html'>August 2009</a></li>
+	<li><a href='../../07/index.html'>July 2009</a></li>
+	<li><a href='../../06/index.html'>June 2009</a></li>
+	<li><a href='../../05/index.html'>May 2009</a></li>
+	<li><a href='../../04/index.html'>April 2009</a></li>
+	<li><a href='../../03/index.html'>March 2009</a></li>
+	<li><a href='../../02/index.html'>February 2009</a></li>
+	<li><a href='../../01/index.html'>January 2009</a></li>
+	<li><a href='../../../2008/11/index.html'>November 2008</a></li>
+	<li><a href='../../../2008/09/index.html'>September 2008</a></li>
+	<li><a href='../../../2008/08/index.html'>August 2008</a></li>
+	<li><a href='../../../2008/07/index.html'>July 2008</a></li>
+					</ul>
+				</aside>
+						</div>
+			
+			
+							
+					
+					<ul>
+												
+											</ul>
+				</aside>
+						</div>
+		</div>
+
+</div>
+</div>
+
+
+<script type='text/javascript'>
+/* <![CDATA[ */
+var viewsCacheL10n = {"admin_ajax_url":"http:\/\/www.fruitstandsoftware.com\/blog\/wp-admin\/admin-ajax.php","post_id":"362"};
+/* ]]> */
+</script>
+<script type='text/javascript' src='../../../wp-content/plugins/wp-postviews/postviews-cache-ver=1.64.js'></script>
+<script type='text/javascript' src='../../../wp-content/themes/landscape/js/small-menu-ver=20120206.js'></script>
+
+</body>
+</html>
+
+
+

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="initial-scale=1">
+<title>What To Do If Your Sandboxed Application Shows Up As Not Sandboxed | Core Fruition</title>
+
+
+			<link rel='prev' title='The Definitive WWDC 2012 Party &amp; Event List' href='../the-definitive-wwdc-2012-party-event-list/index.html' />
+<link rel='next' title='WWDC 2012 Photo Walk Wrap-Up' href='../wwdc-2012-photo-walk-wrap-up/index.html' />
+</head>
+
+<body class="single single-post postid-570 single-format-standard custom-background group-blog">
+
+
+
+		
+			
+
+			
+				
+<article id="post-570" class="post-570 post type-post status-publish format-standard hentry category-cocoa">
+	
+		<h1>What To Do If Your Sandboxed Application Shows Up As Not Sandboxed</h1>
+
+		
+			<a href="index.html" title="7:23 PM" rel="bookmark"><time class="entry-date" datetime="2012-06-05T19:23:21+00:00">June 5, 2012</time></a><span class="byline"> by <span class="author vcard"><a class="url fn n" href="../../../author/mrrooni/index.html" title="View all posts by Michael" rel="author">Michael</a></span></span>		</div>
+	
+
+	
+		<p>This afternoon I started working on turning <a href="http://nothirst.com/moneywell/" target="_blank">MoneyWell for Mac</a> into a sandboxed application for our next major release. I watched the <a href="https://developer.apple.com/devcenter/mac/app-sandbox/" target="_blank">intro videos</a>, checked the appropriate checkboxes in Xcode, ran MoneyWell, checked Activity Monitor and saw&#8230;</p>
+<p><a href="../../../wp-content/uploads/2012/06/Activity-Monitor-1-1.jpg"><img class="aligncenter size-full wp-image-571" title="MoneyWellNotSandboxed" src="../../../wp-content/uploads/2012/06/Activity-Monitor-1-1.jpg" alt="" width="828" height="630" /></a></p>
+<p>&nbsp;</p>
+<p>Well crap. After a bit of unsuccessful searching on the <a href="https://devforums.apple.com/community/mac?view=discussions" target="_blank">Apple Dev Forums</a> I did some testing with <a href="http://twitter.com/kevinhoctor" target="_blank">Kevin Hoctor</a> and discovered that the <strong>Release</strong> configuration of MoneyWell was properly sandboxed. The only significant difference between the <strong>Release</strong> and <strong>Debug</strong> configurations was that one was code signed and one was not. Once we enabled code signing for the <strong>Debug</strong> configuration MoneyWell launched as a sandboxed app.</p>
+<p>I asked on Twitter,</p>
+<blockquote><p><a href="http://twitter.com/MrRooni/status/210136419224649728" target="_blank">Is it common knowledge that an app that is not code signed will run in non-sandboxed mode even with sandboxing enabled?</a></p></blockquote>
+<p>Both Brian Webster and Jim Correia got back to me:</p>
+<blockquote><p><a href="http://twitter.com/bwebster" target="_blank">@bwebster</a>: <a href="http://twitter.com/bwebster/status/210142826468618240" target="_blank">That does make sense, since it is the code sign tool that&#8217;s used to encode the sandbox entitlements when building.</a></p>
+<p><a href="http://twitter.com/jimcorreia" target="_blank">@jimcorreia</a>: <a href="http://twitter.com/jimcorreia/status/210143389579096065" target="_blank">The app-sandbox is an entitlement. Entitlements are embedded in the code signature.</a></p></blockquote>
+<p>Hopefully this helps you out if you find that your sandboxed app is showing up as not sandboxed.</p>
+			</div>
+
+	
+		This entry was posted in <a href="../../../category/cocoa/index.html" title="View all posts in Cocoa" rel="category tag">Cocoa</a>. 
+			
+</article>
+
+					<nav role="navigation" id="nav-below" class="site-navigation post-navigation">
+		
+
+	
+		<div class="nav-previous"><a href="../the-definitive-wwdc-2012-party-event-list/index.html" rel="prev"><span class="meta-nav">&larr;</span> The Definitive WWDC 2012 Party &#038; Event List</a></div>		<div class="nav-next"><a href="../wwdc-2012-photo-walk-wrap-up/index.html" rel="next">WWDC 2012 Photo Walk Wrap-Up <span class="meta-nav">&rarr;</span></a></div>
+	
+	</nav>
+	
+				
+			
+			</div>
+		</div>
+
+		
+						
+			
+				
+						
+				</aside>
+
+						</div>
+			
+			
+							
+					<h1 class="widget-title">Archives</h1>
+					<ul>
+							<li><a href='../../../2013/05/index.html'>May 2013</a></li>
+	<li><a href='../../../2013/04/index.html'>April 2013</a></li>
+	<li><a href='../../../2013/02/index.html'>February 2013</a></li>
+	<li><a href='../../08/index.html'>August 2012</a></li>
+	<li><a href='../../07/index.html'>July 2012</a></li>
+	<li><a href='../index.html'>June 2012</a></li>
+	<li><a href='../../05/index.html'>May 2012</a></li>
+	<li><a href='../../../2010/06/index.html'>June 2010</a></li>
+	<li><a href='../../../2010/03/index.html'>March 2010</a></li>
+	<li><a href='../../../2010/01/index.html'>January 2010</a></li>
+	<li><a href='../../../2009/12/index.html'>December 2009</a></li>
+	<li><a href='../../../2009/10/index.html'>October 2009</a></li>
+	<li><a href='../../../2009/09/index.html'>September 2009</a></li>
+	<li><a href='../../../2009/08/index.html'>August 2009</a></li>
+	<li><a href='../../../2009/07/index.html'>July 2009</a></li>
+	<li><a href='../../../2009/06/index.html'>June 2009</a></li>
+	<li><a href='../../../2009/05/index.html'>May 2009</a></li>
+	<li><a href='../../../2009/04/index.html'>April 2009</a></li>
+	<li><a href='../../../2009/03/index.html'>March 2009</a></li>
+	<li><a href='../../../2009/02/index.html'>February 2009</a></li>
+	<li><a href='../../../2009/01/index.html'>January 2009</a></li>
+	<li><a href='../../../2008/11/index.html'>November 2008</a></li>
+	<li><a href='../../../2008/09/index.html'>September 2008</a></li>
+	<li><a href='../../../2008/08/index.html'>August 2008</a></li>
+	<li><a href='../../../2008/07/index.html'>July 2008</a></li>
+					</ul>
+				</aside>
+						</div>
+			
+			
+							
+					
+					<ul>
+												
+											</ul>
+				</aside>
+						</div>
+		</div>
+
+</div>
+</div>
+
+
+<script type='text/javascript'>
+/* <![CDATA[ */
+var viewsCacheL10n = {"admin_ajax_url":"http:\/\/www.fruitstandsoftware.com\/blog\/wp-admin\/admin-ajax.php","post_id":"570"};
+/* ]]> */
+</script>
+<script type='text/javascript' src='../../../wp-content/plugins/wp-postviews/postviews-cache-ver=1.64.js'></script>
+<script type='text/javascript' src='../../../wp-content/themes/landscape/js/small-menu-ver=20120206.js'></script>
+
+</body>
+</html>
+
+
+

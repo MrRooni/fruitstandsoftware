@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="initial-scale=1">
+<title>Bypassing the Trouble Caused by Updating an iPhone App Provisioning Profile | Core Fruition</title>
+
+
+			<link rel="alternate" type="application/rss+xml" title="Core Fruition &raquo; Bypassing the Trouble Caused by Updating an iPhone App Provisioning Profile Comments Feed" href="feed/index.html" />
+<link rel='prev' title='iPhone, Timezones, and WWDC (or, How I Stopped Worrying and Learned to Love iCal)' href='../../05/iphone-timezones-and-wwdc-or-how-i-stopped-worrying-and-learned-to-love-ical/index.html' />
+<link rel='next' title='I am Not a Name Thief' href='../i-am-not-a-name-thief/index.html' />
+</head>
+
+<body class="single single-post postid-244 single-format-standard custom-background group-blog">
+
+
+
+		
+			
+
+			
+				
+<article id="post-244" class="post-244 post type-post status-publish format-standard hentry category-cocoa category-debugging">
+	
+		<h1>Bypassing the Trouble Caused by Updating an iPhone App Provisioning Profile</h1>
+
+		
+			<a href="index.html" title="12:45 PM" rel="bookmark"><time class="entry-date" datetime="2009-06-19T12:45:33+00:00">June 19, 2009</time></a>		</div>
+	
+
+	
+		<p><strong>[UPDATE]</strong> After many discussions on Twitter and many recommendations by different folks, I think that we have determined that the method outlined below is not necessary.  <a href="http://twitter.com/heymac">Mike Taylor</a> has hit upon what appears to be a foolproof method for getting around the trouble caused by updating an iPhone app provisioning profile, and best of all, he did it in 140 characters:</p>
+<blockquote><p>@<a style="text-decoration: none; color: #2fc2ef; padding: 0px; margin: 0px;" href="http://twitter.com/kalperin">kalperin</a> @<a style="text-decoration: none; color: #2fc2ef; padding: 0px; margin: 0px;" href="http://twitter.com/MrRooni">MrRooni</a> Delete old profile from Organizer. Download new profile &#8216;n drag to organizer. Restart Xcode. Choose new profile in target</p></blockquote>
+<p>Many thanks to Mike for helping me out here, I owe you a beer at WWDC10.  For those of you interested in the more masochistic way to get around the issues, feel free to continue reading:</p>
+<p>A note before I begin: Everything below was done with the final build of the iPhone OS 3.0 SDK and I was building an app using the 2.2.1 frameworks.</p>
+<p>I recently acquired a new iPod touch to use a development device.  One of the first things that I wanted to do was get my existing project up and running on the device so I headed over to the iPhone Development Program Portal to update my provisioning profile.</p>
+<p>After adding the new device to my app&#8217;s provisioning profile I downloaded the updated profile and installed it into Xcode and onto the device via the Organizer.  So far so good, everything up until this point worked exactly as I expected it to.</p>
+<p>Switching back to my project I changed my build settings to be a Release build under 2.2.1 on the device.  The app built fine, but I got an error when it tried to install the app onto the device, something error akin to &#8220;This device doesn&#8217;t contain the provisioning profile with which this app was built&#8221;.  Thinking that maybe Xcode just hadn&#8217;t seen the new profile yet I cleaned all targets in my project, restarted Xcode and tried again.  No dice, same error as before.</p>
+<p>I then proceeded to delete all versions of the profile from the organizer and re-installed the new one.  My assumption was that once Xcode saw that the old profile didn&#8217;t exists anymore it would switch over and use the new one.  I cleaned all targets and built again.  This time I was treated to a different error: &#8221;Code Sign error: Provisioning profile &#8217;3E6AA725-6534-46F8-B9CE-D19AC9FD854B&#8217; can&#8217;t be found&#8221;</p>
+<p>After a bit of Googling I discovered that Xcode stores the ID of the provisioning profile in its project.pbxproj file.  This discovery led me to the fix:</p>
+<ol>
+<li>Close your Xcode project</li>
+<li>Navigate to your project folder in the Finder</li>
+<li>Right click on your .xcodeproj file and &#8216;Show Package Contents&#8217;</li>
+<li>Drag the project.pbxproj file to Xcode (or any plain text editor)</li>
+<li>Perform a search for the term &#8216;provision&#8217; to find the PROVISIONING_PROFILE entry.</li>
+<li>Copy the existing profile ID and paste it into the find field of a find and a replace dialog.</li>
+<li>Open up the Organizer window (Window menu &gt; Organizer) and navigate to your new profile under IPHONE DEVELOPMENT &gt; Provisioning Profiles</li>
+<li>Click on your provisioning profile and copy its Profile Identifier</li>
+<li>Paste the string into the replace field in your open find and replace dialog.</li>
+<li>Replace all instances of the identifier, save the file, close it, and reopen your Xcode project.</li>
+<li>That should do it, build and go to run your app on your new device.</li>
+</ol>
+<p>Now there is a great possibility that I am going WAY overboard here and missing a very obvious way to accomplish the same solution.  If that&#8217;s the case please let me know in the comments.</p>
+			</div>
+
+	
+		This entry was posted in <a href="../../../category/cocoa/index.html" title="View all posts in Cocoa" rel="category tag">Cocoa</a>, <a href="../../../category/debugging/index.html" title="View all posts in Debugging" rel="category tag">Debugging</a>. 
+			
+</article>
+
+					<nav role="navigation" id="nav-below" class="site-navigation post-navigation">
+		
+
+	
+		<div class="nav-previous"><a href="../../05/iphone-timezones-and-wwdc-or-how-i-stopped-worrying-and-learned-to-love-ical/index.html" rel="prev"><span class="meta-nav">&larr;</span> iPhone, Timezones, and WWDC (or, How I Stopped Worrying and Learned to Love iCal)</a></div>		<div class="nav-next"><a href="../i-am-not-a-name-thief/index.html" rel="next">I am Not a Name Thief <span class="meta-nav">&rarr;</span></a></div>
+	
+	</nav>
+	
+				
+
+	
+
+	
+			<h2 class="comments-title">
+			9 thoughts on &ldquo;<span>Bypassing the Trouble Caused by Updating an iPhone App Provisioning Profile</span>&rdquo;		</h2>
+
+		
+		<ol class="commentlist">
+				<li class="comment even thread-even depth-1" id="li-comment-206">
+		<article id="comment-206" class="comment">
+			<footer>
+				<div class="comment-author vcard">
+										<cite class="fn">Mark</cite> <span class="says">says:</span>				</div>
+				
+				<div class="comment-meta commentmetadata">
+					<a href="comment-page-1/index.html#comment-206"><time datetime="2009-06-19T14:28:09+00:00">
+					June 19, 2009 at 2:28 PM					</time></a>
+									</div>
+			
+
+			<div class="comment-content"><p>Do a &#8216;Get Info&#8217; on the root of your project in the &#8220;Groups &amp; Files&#8221; view.  There should be a &#8220;Code Signing Identity&#8221; setting.  All you should have to do is set that to the correct provisioning profile.  I do it for all configurations and that is it.</p>
+</div>
+
+			<div class="reply">
+							</div>
+		</article>
+
+	</li>
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="li-comment-207">
+		<article id="comment-207" class="comment">
+			<footer>
+				<div class="comment-author vcard">
+										<cite class="fn"><a href='http://steveweller.com' rel='external nofollow' class='url'>Steve Weller</a></cite> <span class="says">says:</span>				</div>
+				
+				<div class="comment-meta commentmetadata">
+					<a href="comment-page-1/index.html#comment-207"><time datetime="2009-06-29T10:33:43+00:00">
+					June 29, 2009 at 10:33 AM					</time></a>
+									</div>
+			
+
+			<div class="comment-content"><p>I&#8217;ve found provisioning profiles to be finicky. You have to install them in two places (both in the organizer, IIRC)  and then sync with iTunes, and occasionally reboot the device as well.</p>
+</div>
+
+			<div class="reply">
+							</div>
+		</article>
+
+	</li>
+	<li class="comment even thread-even depth-1" id="li-comment-208">
+		<article id="comment-208" class="comment">
+			<footer>
+				<div class="comment-author vcard">
+										<cite class="fn"><a href='http://navicad.com' rel='external nofollow' class='url'>Chuck Han</a></cite> <span class="says">says:</span>				</div>
+				
+				<div class="comment-meta commentmetadata">
+					<a href="comment-page-1/index.html#comment-208"><time datetime="2009-09-08T09:31:42+00:00">
+					September 8, 2009 at 9:31 AM					</time></a>
+									</div>
+			
+
+			<div class="comment-content"><p>@Mark (#1 comment):<br />
+Your solution does not always work.  It&#8217;s the way you&#8217;re SUPPOSED to do it, but if you&#8217;ve created projects from previous projects, you might have several entries in the project.pbxproj file XCBuildConfiguration section with the same name.  This problem might be an artifact of the fact that I name all my provisioning profiles with the same suffix (x DEBUG, x RELEASE, x AD HOC, and x APP STORE) for builds that I want to put on the device for organizational sanity.</p>
+<p>Thus I have to go through similar hoops that are specified above.  However, I&#8217;ve found that the simpler way is to:</p>
+<p>1. close xCode<br />
+2. delete the PROVISIONING_PROFILE lines in the project.pbxproj file<br />
+3. open the project in Xcode<br />
+4. specify the build and click the Info button to re-specify the code signing identy&#8211;I&#8217;ve got multiple provisioning profiles running around, so I need to do this.</p>
+<p>I&#8217;ve tried the replacement method, and I inevitably mess it up.  And I don&#8217;t like the updated method either.</p>
+<p>thanks, Chuck</p>
+</div>
+
+			<div class="reply">
+							</div>
+		</article>
+
+	</li>
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="li-comment-209">
+		<article id="comment-209" class="comment">
+			<footer>
+				<div class="comment-author vcard">
+										<cite class="fn"><a href='http://navicad.com' rel='external nofollow' class='url'>Chuck Han</a></cite> <span class="says">says:</span>				</div>
+				
+				<div class="comment-meta commentmetadata">
+					<a href="comment-page-1/index.html#comment-209"><time datetime="2009-09-08T09:33:55+00:00">
+					September 8, 2009 at 9:33 AM					</time></a>
+									</div>
+			
+
+			<div class="comment-content"><p>Just to be safe, between steps 1 and 2 of my description above, it&#8217;s wise to make a copy of the project.pbxproj file before editing it!</p>
+</div>
+
+			<div class="reply">
+							</div>
+		</article>
+
+	</li>
+	<li class="comment even thread-even depth-1" id="li-comment-210">
+		<article id="comment-210" class="comment">
+			<footer>
+				<div class="comment-author vcard">
+										<cite class="fn"><a href='http://twitter.com/Rick_smith' rel='external nofollow' class='url'>Rick</a></cite> <span class="says">says:</span>				</div>
+				
+				<div class="comment-meta commentmetadata">
+					<a href="comment-page-1/index.html#comment-210"><time datetime="2009-09-11T22:59:49+00:00">
+					September 11, 2009 at 10:59 PM					</time></a>
+									</div>
+			
+
+			<div class="comment-content"><p>I&#8217;m trying to get some help in regards to a demo software I was sent.</p>
+<p>I have the provision file and the app. where do i install these 2 files?</p>
+<p>I can&#8217;t get this app to install on my phone..please help.</p>
+</div>
+
+			<div class="reply">
+							</div>
+		</article>
+
+	</li>
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="li-comment-211">
+		<article id="comment-211" class="comment">
+			<footer>
+				<div class="comment-author vcard">
+										<cite class="fn"><a href='http://fruitstandsoftware.com' rel='external nofollow' class='url'>Michael</a></cite> <span class="says">says:</span>				</div>
+				
+				<div class="comment-meta commentmetadata">
+					<a href="comment-page-1/index.html#comment-211"><time datetime="2009-09-11T23:05:01+00:00">
+					September 11, 2009 at 11:05 PM					</time></a>
+									</div>
+			
+
+			<div class="comment-content"><p>Rick,</p>
+<p>You can drag those two files to the Applications section in iTunes and then sync your phone.  The app should be installed then.</p>
+</div>
+
+			<div class="reply">
+							</div>
+		</article>
+
+	</li>
+	<li class="comment even thread-even depth-1" id="li-comment-212">
+		<article id="comment-212" class="comment">
+			<footer>
+				<div class="comment-author vcard">
+										<cite class="fn"><a href='http://twitter.com/Rick_smith' rel='external nofollow' class='url'>Rick</a></cite> <span class="says">says:</span>				</div>
+				
+				<div class="comment-meta commentmetadata">
+					<a href="comment-page-1/index.html#comment-212"><time datetime="2009-09-11T23:07:25+00:00">
+					September 11, 2009 at 11:07 PM					</time></a>
+									</div>
+			
+
+			<div class="comment-content"><p>so i put the .provision file int he same folder with the .ipa files? that would be the only odd ball in there.</p>
+<p>I tried that, but the app still isn&#8217;t syncing to my phone</p>
+</div>
+
+			<div class="reply">
+							</div>
+		</article>
+
+	</li>
+	<li class="comment odd alt thread-odd thread-alt depth-1" id="li-comment-213">
+		<article id="comment-213" class="comment">
+			<footer>
+				<div class="comment-author vcard">
+										<cite class="fn"><a href='http://fruitstandsoftware.com' rel='external nofollow' class='url'>Michael</a></cite> <span class="says">says:</span>				</div>
+				
+				<div class="comment-meta commentmetadata">
+					<a href="comment-page-1/index.html#comment-213"><time datetime="2009-09-11T23:57:53+00:00">
+					September 11, 2009 at 11:57 PM					</time></a>
+									</div>
+			
+
+			<div class="comment-content"><p>Rick, check out this link for step by step instructions: <a href="http://www.innerfence.com/howto/install-iphone-application-ad-hoc-distribution" rel="nofollow">http://www.innerfence.com/howto/install-iphone-application-ad-hoc-distribution</a></p>
+</div>
+
+			<div class="reply">
+							</div>
+		</article>
+
+	</li>
+	<li class="comment even thread-even depth-1" id="li-comment-214">
+		<article id="comment-214" class="comment">
+			<footer>
+				<div class="comment-author vcard">
+										<cite class="fn">Jimmy</cite> <span class="says">says:</span>				</div>
+				
+				<div class="comment-meta commentmetadata">
+					<a href="comment-page-1/index.html#comment-214"><time datetime="2009-11-01T20:34:40+00:00">
+					November 1, 2009 at 8:34 PM					</time></a>
+									</div>
+			
+
+			<div class="comment-content"><p>I was also having this problem and I had the PROVISIONING_PROFILE duplicated in project.pbxproj.  I found the easiest method was just to delete the existing configuration I had called &#8220;Release Ad-Hoc&#8221; and then recreate it.  This was easier than manually editing the project.pbxproj.</p>
+</div>
+
+			<div class="reply">
+							</div>
+		</article>
+
+	</li>
+		</ol>
+
+		
+	
+	
+									
+				
+									<p class="must-log-in">You must be <a href="../../../wp-login.php-redirect_to=http_%7C%7Cwww.fruitstandsoftware.com%7Cblog%7C2009%7C06%7Cbypassing-the-trouble-caused-by-updating-an-iphone-app-provisioning-profile%7C.html">logged in</a> to post a comment.</p>												</div>
+		
+</div>
+
+			
+			</div>
+		</div>
+
+		
+						
+			
+				
+						
+				</aside>
+
+						</div>
+			
+			
+							
+					<h1 class="widget-title">Archives</h1>
+					<ul>
+							<li><a href='../../../2013/05/index.html'>May 2013</a></li>
+	<li><a href='../../../2013/04/index.html'>April 2013</a></li>
+	<li><a href='../../../2013/02/index.html'>February 2013</a></li>
+	<li><a href='../../../2012/08/index.html'>August 2012</a></li>
+	<li><a href='../../../2012/07/index.html'>July 2012</a></li>
+	<li><a href='../../../2012/06/index.html'>June 2012</a></li>
+	<li><a href='../../../2012/05/index.html'>May 2012</a></li>
+	<li><a href='../../../2010/06/index.html'>June 2010</a></li>
+	<li><a href='../../../2010/03/index.html'>March 2010</a></li>
+	<li><a href='../../../2010/01/index.html'>January 2010</a></li>
+	<li><a href='../../12/index.html'>December 2009</a></li>
+	<li><a href='../../10/index.html'>October 2009</a></li>
+	<li><a href='../../09/index.html'>September 2009</a></li>
+	<li><a href='../../08/index.html'>August 2009</a></li>
+	<li><a href='../../07/index.html'>July 2009</a></li>
+	<li><a href='../index.html'>June 2009</a></li>
+	<li><a href='../../05/index.html'>May 2009</a></li>
+	<li><a href='../../04/index.html'>April 2009</a></li>
+	<li><a href='../../03/index.html'>March 2009</a></li>
+	<li><a href='../../02/index.html'>February 2009</a></li>
+	<li><a href='../../01/index.html'>January 2009</a></li>
+	<li><a href='../../../2008/11/index.html'>November 2008</a></li>
+	<li><a href='../../../2008/09/index.html'>September 2008</a></li>
+	<li><a href='../../../2008/08/index.html'>August 2008</a></li>
+	<li><a href='../../../2008/07/index.html'>July 2008</a></li>
+					</ul>
+				</aside>
+						</div>
+			
+			
+							
+					
+					<ul>
+												
+											</ul>
+				</aside>
+						</div>
+		</div>
+
+</div>
+</div>
+
+
+<script type='text/javascript'>
+/* <![CDATA[ */
+var viewsCacheL10n = {"admin_ajax_url":"http:\/\/www.fruitstandsoftware.com\/blog\/wp-admin\/admin-ajax.php","post_id":"244"};
+/* ]]> */
+</script>
+<script type='text/javascript' src='../../../wp-content/plugins/wp-postviews/postviews-cache-ver=1.64.js'></script>
+<script type='text/javascript' src='../../../wp-content/themes/landscape/js/small-menu-ver=20120206.js'></script>
+
+</body>
+</html>
+
+
+

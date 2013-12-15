@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="initial-scale=1">
+<title>UITableView and NSFetchedResultsController: Updates Done Right | Core Fruition</title>
+
+
+			<link rel='prev' title='Quick and easy debugging of unrecognized selector sent to instance' href='../../../2012/08/quick-and-easy-debugging-of-unrecognized-selector-sent-to-instance/index.html' />
+<link rel='next' title='Link Dump' href='../../04/link-dump/index.html' />
+</head>
+
+<body class="single single-post postid-635 single-format-standard custom-background group-blog">
+
+
+
+		
+			
+
+			
+				
+<article id="post-635" class="post-635 post type-post status-publish format-standard hentry category-cocoa category-sample-code">
+	
+		<h1>UITableView and NSFetchedResultsController: Updates Done Right</h1>
+
+		
+			<a href="index.html" title="1:56 PM" rel="bookmark"><time class="entry-date" datetime="2013-02-19T13:56:05+00:00">February 19, 2013</time></a><span class="byline"> by <span class="author vcard"><a class="url fn n" href="../../../author/mrrooni/index.html" title="View all posts by Michael" rel="author">Michael</a></span></span>		</div>
+	
+
+	
+		<p>While working on <a href="http://nothirst.com/moneywellexpress/">MoneyWell Express</a> 1.0 I decided to finally sit down and figure out a bug that had plagued me for a long time: Periodic and seemingly random crashes when updating MoneyWell&#8217;s transaction UITableView. If you&#8217;ve spent any significant time with UITableView you&#8217;ve undoubtably seen an error similar to this one:</p>
+<pre>*** Assertion failure in -[UITableView _endCellAnimationsWithContext:], /SourceCache/UIKit_Sim/UIKit-2380.17/UITableView.m:1070
+
+CoreData: error: Serious application error.  
+
+An exception was caught from the delegate of NSFetchedResultsController during a call to -controllerDidChangeContent:.
+
+Invalid update: invalid number of rows in section 2.
+
+The number of rows contained in an existing section after the update (2) must be equal to the number of rows contained in that section before the update (1),
+
+plus or minus the number of rows inserted or deleted from that section (0 inserted, 0 deleted) and
+
+plus or minus the number of rows moved into or out of that section (0 moved in, 0 moved out). with userInfo (null)</pre>
+<p>The problem with this bug for me was that it was intermittent and never reliably reproducible &#8211; until it was. One day while working on our <a href="https://github.com/nothirst/TICoreDataSync/">syncing framework</a> I had this issue start to reproduce itself every time MoneyWell Express attempted to consume some sync changes and I seized the opportunity to finally figure out what was going on.</p>
+<p>Let&#8217;s start by taking a look at the sample code Apple provides on the <a href="http://developer.apple.com/library/ios/#documentation/CoreData/Reference/NSFetchedResultsControllerDelegate_Protocol/Reference/Reference.html">NSFetchedResultsControllerDelegate Protocol Reference</a>:</p>
+
+<div class="wp_syntax"><table><tr><td class="code"><pre class="objc" style="font-family:monospace;"><span style="color: #11740a; font-style: italic;">/*
+   Assume self has a property 'tableView' -- as is the case for an instance of a UITableViewController
+   subclass -- and a method configureCell:atIndexPath: which updates the contents of a given cell
+   with information from a managed object at the given index path in the fetched results controller.
+ */</span>
+&nbsp;
+<span style="color: #002200;">-</span> <span style="color: #002200;">&#40;</span><span style="color: #a61390;">void</span><span style="color: #002200;">&#41;</span>controllerWillChangeContent<span style="color: #002200;">:</span><span style="color: #002200;">&#40;</span>NSFetchedResultsController <span style="color: #002200;">*</span><span style="color: #002200;">&#41;</span>controller
+<span style="color: #002200;">&#123;</span>
+    <span style="color: #002200;">&#91;</span>self.tableView beginUpdates<span style="color: #002200;">&#93;</span>;
+<span style="color: #002200;">&#125;</span>
+&nbsp;
+<span style="color: #002200;">-</span> <span style="color: #002200;">&#40;</span><span style="color: #a61390;">void</span><span style="color: #002200;">&#41;</span>controller<span style="color: #002200;">:</span><span style="color: #002200;">&#40;</span>NSFetchedResultsController <span style="color: #002200;">*</span><span style="color: #002200;">&#41;</span>controller didChangeSection<span style="color: #002200;">:</span><span style="color: #002200;">&#40;</span><span style="color: #a61390;">id</span> <span style="color: #002200;">&#41;</span>sectionInfo
+    atIndex<span style="color: #002200;">:</span><span style="color: #002200;">&#40;</span>NSUInteger<span style="color: #002200;">&#41;</span>sectionIndex forChangeType<span style="color: #002200;">:</span><span style="color: #002200;">&#40;</span>NSFetchedResultsChangeType<span style="color: #002200;">&#41;</span>type
+<span style="color: #002200;">&#123;</span>
+    <span style="color: #a61390;">switch</span> <span style="color: #002200;">&#40;</span>type<span style="color: #002200;">&#41;</span> <span style="color: #002200;">&#123;</span>
+        <span style="color: #a61390;">case</span> NSFetchedResultsChangeInsert<span style="color: #002200;">:</span>
+            <span style="color: #002200;">&#91;</span>self.tableView insertSections<span style="color: #002200;">:</span><span style="color: #002200;">&#91;</span><span style="color: #400080;">NSIndexSet</span> indexSetWithIndex<span style="color: #002200;">:</span>sectionIndex<span style="color: #002200;">&#93;</span> withRowAnimation<span style="color: #002200;">:</span>UITableViewRowAnimationFade<span style="color: #002200;">&#93;</span>;
+            <span style="color: #a61390;">break</span>;
+        <span style="color: #a61390;">case</span> NSFetchedResultsChangeDelete<span style="color: #002200;">:</span>
+            <span style="color: #002200;">&#91;</span>self.tableView deleteSections<span style="color: #002200;">:</span><span style="color: #002200;">&#91;</span><span style="color: #400080;">NSIndexSet</span> indexSetWithIndex<span style="color: #002200;">:</span>sectionIndex<span style="color: #002200;">&#93;</span> withRowAnimation<span style="color: #002200;">:</span>UITableViewRowAnimationFade<span style="color: #002200;">&#93;</span>;
+            <span style="color: #a61390;">break</span>;
+    <span style="color: #002200;">&#125;</span>
+<span style="color: #002200;">&#125;</span>
+&nbsp;
+<span style="color: #002200;">-</span> <span style="color: #002200;">&#40;</span><span style="color: #a61390;">void</span><span style="color: #002200;">&#41;</span>controller<span style="color: #002200;">:</span><span style="color: #002200;">&#40;</span>NSFetchedResultsController <span style="color: #002200;">*</span><span style="color: #002200;">&#41;</span>controller didChangeObject<span style="color: #002200;">:</span><span style="color: #002200;">&#40;</span><span style="color: #a61390;">id</span><span style="color: #002200;">&#41;</span>anObject atIndexPath<span style="color: #002200;">:</span><span style="color: #002200;">&#40;</span><span style="color: #400080;">NSIndexPath</span> <span style="color: #002200;">*</span><span style="color: #002200;">&#41;</span>indexPath 
+          forChangeType<span style="color: #002200;">:</span><span style="color: #002200;">&#40;</span>NSFetchedResultsChangeType<span style="color: #002200;">&#41;</span>type newIndexPath<span style="color: #002200;">:</span><span style="color: #002200;">&#40;</span><span style="color: #400080;">NSIndexPath</span> <span style="color: #002200;">*</span><span style="color: #002200;">&#41;</span>newIndexPath
+<span style="color: #002200;">&#123;</span>
+    UITableView <span style="color: #002200;">*</span>tableView <span style="color: #002200;">=</span> self.tableView;
+&nbsp;
+    <span style="color: #a61390;">switch</span> <span style="color: #002200;">&#40;</span>type<span style="color: #002200;">&#41;</span> <span style="color: #002200;">&#123;</span>
+        <span style="color: #a61390;">case</span> NSFetchedResultsChangeInsert<span style="color: #002200;">:</span>
+            <span style="color: #002200;">&#91;</span>tableView insertRowsAtIndexPaths<span style="color: #002200;">:</span><span style="color: #002200;">&#91;</span><span style="color: #400080;">NSArray</span> arrayWithObject<span style="color: #002200;">:</span>newIndexPath<span style="color: #002200;">&#93;</span> withRowAnimation<span style="color: #002200;">:</span>UITableViewRowAnimationFade<span style="color: #002200;">&#93;</span>;
+            <span style="color: #a61390;">break</span>;
+        <span style="color: #a61390;">case</span> NSFetchedResultsChangeDelete<span style="color: #002200;">:</span>
+            <span style="color: #002200;">&#91;</span>tableView deleteRowsAtIndexPaths<span style="color: #002200;">:</span><span style="color: #002200;">&#91;</span><span style="color: #400080;">NSArray</span> arrayWithObject<span style="color: #002200;">:</span>indexPath<span style="color: #002200;">&#93;</span> withRowAnimation<span style="color: #002200;">:</span>UITableViewRowAnimationFade<span style="color: #002200;">&#93;</span>;
+            <span style="color: #a61390;">break</span>;
+&nbsp;
+        <span style="color: #a61390;">case</span> NSFetchedResultsChangeUpdate<span style="color: #002200;">:</span>
+            <span style="color: #002200;">&#91;</span>self configureCell<span style="color: #002200;">:</span><span style="color: #002200;">&#91;</span>tableView cellForRowAtIndexPath<span style="color: #002200;">:</span>indexPath<span style="color: #002200;">&#93;</span> atIndexPath<span style="color: #002200;">:</span>indexPath<span style="color: #002200;">&#93;</span>;
+            <span style="color: #a61390;">break</span>;
+&nbsp;
+        <span style="color: #a61390;">case</span> NSFetchedResultsChangeMove<span style="color: #002200;">:</span>
+            <span style="color: #002200;">&#91;</span>tableView deleteRowsAtIndexPaths<span style="color: #002200;">:</span><span style="color: #002200;">&#91;</span><span style="color: #400080;">NSArray</span> arrayWithObject<span style="color: #002200;">:</span>indexPath<span style="color: #002200;">&#93;</span> withRowAnimation<span style="color: #002200;">:</span>UITableViewRowAnimationFade<span style="color: #002200;">&#93;</span>;
+            <span style="color: #002200;">&#91;</span>tableView insertRowsAtIndexPaths<span style="color: #002200;">:</span><span style="color: #002200;">&#91;</span><span style="color: #400080;">NSArray</span> arrayWithObject<span style="color: #002200;">:</span>newIndexPath<span style="color: #002200;">&#93;</span> withRowAnimation<span style="color: #002200;">:</span>UITableViewRowAnimationFade<span style="color: #002200;">&#93;</span>;
+            <span style="color: #a61390;">break</span>;
+    <span style="color: #002200;">&#125;</span>
+<span style="color: #002200;">&#125;</span>
+&nbsp;
+<span style="color: #002200;">-</span> <span style="color: #002200;">&#40;</span><span style="color: #a61390;">void</span><span style="color: #002200;">&#41;</span>controllerDidChangeContent<span style="color: #002200;">:</span><span style="color: #002200;">&#40;</span>NSFetchedResultsController <span style="color: #002200;">*</span><span style="color: #002200;">&#41;</span>controller
+<span style="color: #002200;">&#123;</span>
+    <span style="color: #002200;">&#91;</span>self.tableView endUpdates<span style="color: #002200;">&#93;</span>;
+<span style="color: #002200;">&#125;</span></pre></td></tr></table></div>
+
+<p>As you can see this code starts the tableView updates in controllerWillChangeContent:, responds to each change as it happens, and then ends the tableView updates in controllerDidChangeContent:. The problem I ran into with this code is that inserting sections into the table also inserted all the rows for that new section, but since those rows were also being reported as inserted we would get twice the number of rows inserted when adding a new section to the table. The answer was to queue up all the updates that the fetchedResultsController reported and then respond to them all at once, like so:</p>
+
+<div class="wp_syntax"><table><tr><td class="code"><pre class="objc" style="font-family:monospace;"><span style="color: #a61390;">@interface</span> SomeViewController <span style="color: #002200;">&#40;</span><span style="color: #002200;">&#41;</span>
+&nbsp;
+<span style="color: #11740a; font-style: italic;">// Declare some collection properties to hold the various updates we might get from the NSFetchedResultsControllerDelegate</span>
+<span style="color: #a61390;">@property</span> <span style="color: #002200;">&#40;</span>nonatomic, strong<span style="color: #002200;">&#41;</span> <span style="color: #400080;">NSMutableIndexSet</span> <span style="color: #002200;">*</span>deletedSectionIndexes;
+<span style="color: #a61390;">@property</span> <span style="color: #002200;">&#40;</span>nonatomic, strong<span style="color: #002200;">&#41;</span> <span style="color: #400080;">NSMutableIndexSet</span> <span style="color: #002200;">*</span>insertedSectionIndexes;
+<span style="color: #a61390;">@property</span> <span style="color: #002200;">&#40;</span>nonatomic, strong<span style="color: #002200;">&#41;</span> <span style="color: #400080;">NSMutableArray</span> <span style="color: #002200;">*</span>deletedRowIndexPaths;
+<span style="color: #a61390;">@property</span> <span style="color: #002200;">&#40;</span>nonatomic, strong<span style="color: #002200;">&#41;</span> <span style="color: #400080;">NSMutableArray</span> <span style="color: #002200;">*</span>insertedRowIndexPaths;
+<span style="color: #a61390;">@property</span> <span style="color: #002200;">&#40;</span>nonatomic, strong<span style="color: #002200;">&#41;</span> <span style="color: #400080;">NSMutableArray</span> <span style="color: #002200;">*</span>updatedRowIndexPaths;
+&nbsp;
+<span style="color: #a61390;">@end</span>
+&nbsp;
+<span style="color: #a61390;">@implementation</span> SomeViewController
+&nbsp;
+<span style="color: #6e371a;">#pragma mark - NSFetchedResultsControllerDelegate methods</span>
+&nbsp;
+<span style="color: #002200;">-</span> <span style="color: #002200;">&#40;</span><span style="color: #a61390;">void</span><span style="color: #002200;">&#41;</span>controller<span style="color: #002200;">:</span><span style="color: #002200;">&#40;</span>NSFetchedResultsController <span style="color: #002200;">*</span><span style="color: #002200;">&#41;</span>controller didChangeObject<span style="color: #002200;">:</span><span style="color: #002200;">&#40;</span><span style="color: #a61390;">id</span><span style="color: #002200;">&#41;</span>anObject atIndexPath<span style="color: #002200;">:</span><span style="color: #002200;">&#40;</span><span style="color: #400080;">NSIndexPath</span> <span style="color: #002200;">*</span><span style="color: #002200;">&#41;</span>indexPath
+          forChangeType<span style="color: #002200;">:</span><span style="color: #002200;">&#40;</span>NSFetchedResultsChangeType<span style="color: #002200;">&#41;</span>type newIndexPath<span style="color: #002200;">:</span><span style="color: #002200;">&#40;</span><span style="color: #400080;">NSIndexPath</span> <span style="color: #002200;">*</span><span style="color: #002200;">&#41;</span>newIndexPath
+<span style="color: #002200;">&#123;</span>
+    <span style="color: #a61390;">if</span> <span style="color: #002200;">&#40;</span>type <span style="color: #002200;">==</span> NSFetchedResultsChangeInsert<span style="color: #002200;">&#41;</span> <span style="color: #002200;">&#123;</span>
+        <span style="color: #a61390;">if</span> <span style="color: #002200;">&#40;</span><span style="color: #002200;">&#91;</span>self.insertedSectionIndexes containsIndex<span style="color: #002200;">:</span>newIndexPath.section<span style="color: #002200;">&#93;</span><span style="color: #002200;">&#41;</span> <span style="color: #002200;">&#123;</span>
+            <span style="color: #11740a; font-style: italic;">// If we've already been told that we're adding a section for this inserted row we skip it since it will handled by the section insertion.</span>
+            <span style="color: #a61390;">return</span>;
+        <span style="color: #002200;">&#125;</span>
+&nbsp;
+        <span style="color: #002200;">&#91;</span>self.insertedRowIndexPaths addObject<span style="color: #002200;">:</span>newIndexPath<span style="color: #002200;">&#93;</span>;
+    <span style="color: #002200;">&#125;</span> <span style="color: #a61390;">else</span> <span style="color: #a61390;">if</span> <span style="color: #002200;">&#40;</span>type <span style="color: #002200;">==</span> NSFetchedResultsChangeDelete<span style="color: #002200;">&#41;</span> <span style="color: #002200;">&#123;</span>
+        <span style="color: #a61390;">if</span> <span style="color: #002200;">&#40;</span><span style="color: #002200;">&#91;</span>self.deletedSectionIndexes containsIndex<span style="color: #002200;">:</span>indexPath.section<span style="color: #002200;">&#93;</span><span style="color: #002200;">&#41;</span> <span style="color: #002200;">&#123;</span>
+            <span style="color: #11740a; font-style: italic;">// If we've already been told that we're deleting a section for this deleted row we skip it since it will handled by the section deletion.</span>
+            <span style="color: #a61390;">return</span>;
+        <span style="color: #002200;">&#125;</span>
+&nbsp;
+        <span style="color: #002200;">&#91;</span>self.deletedRowIndexPaths addObject<span style="color: #002200;">:</span>indexPath<span style="color: #002200;">&#93;</span>;
+    <span style="color: #002200;">&#125;</span> <span style="color: #a61390;">else</span> <span style="color: #a61390;">if</span> <span style="color: #002200;">&#40;</span>type <span style="color: #002200;">==</span> NSFetchedResultsChangeMove<span style="color: #002200;">&#41;</span> <span style="color: #002200;">&#123;</span>
+        <span style="color: #a61390;">if</span> <span style="color: #002200;">&#40;</span><span style="color: #002200;">&#91;</span>self.insertedSectionIndexes containsIndex<span style="color: #002200;">:</span>newIndexPath.section<span style="color: #002200;">&#93;</span> <span style="color: #002200;">==</span> <span style="color: #a61390;">NO</span><span style="color: #002200;">&#41;</span> <span style="color: #002200;">&#123;</span>
+            <span style="color: #002200;">&#91;</span>self.insertedRowIndexPaths addObject<span style="color: #002200;">:</span>newIndexPath<span style="color: #002200;">&#93;</span>;
+        <span style="color: #002200;">&#125;</span>
+&nbsp;
+        <span style="color: #a61390;">if</span> <span style="color: #002200;">&#40;</span><span style="color: #002200;">&#91;</span>self.deletedSectionIndexes containsIndex<span style="color: #002200;">:</span>indexPath.section<span style="color: #002200;">&#93;</span> <span style="color: #002200;">==</span> <span style="color: #a61390;">NO</span><span style="color: #002200;">&#41;</span> <span style="color: #002200;">&#123;</span>
+            <span style="color: #002200;">&#91;</span>self.deletedRowIndexPaths addObject<span style="color: #002200;">:</span>indexPath<span style="color: #002200;">&#93;</span>;
+        <span style="color: #002200;">&#125;</span>
+    <span style="color: #002200;">&#125;</span> <span style="color: #a61390;">else</span> <span style="color: #a61390;">if</span> <span style="color: #002200;">&#40;</span>type <span style="color: #002200;">==</span> NSFetchedResultsChangeUpdate<span style="color: #002200;">&#41;</span> <span style="color: #002200;">&#123;</span>
+        <span style="color: #002200;">&#91;</span>self.updatedRowIndexPaths addObject<span style="color: #002200;">:</span>indexPath<span style="color: #002200;">&#93;</span>;
+    <span style="color: #002200;">&#125;</span>
+<span style="color: #002200;">&#125;</span>
+&nbsp;
+<span style="color: #002200;">-</span> <span style="color: #002200;">&#40;</span><span style="color: #a61390;">void</span><span style="color: #002200;">&#41;</span>controller<span style="color: #002200;">:</span><span style="color: #002200;">&#40;</span>NSFetchedResultsController <span style="color: #002200;">*</span><span style="color: #002200;">&#41;</span>controller didChangeSection<span style="color: #002200;">:</span><span style="color: #002200;">&#40;</span><span style="color: #a61390;">id</span> <span style="color: #002200;">&#41;</span>sectionInfo atIndex<span style="color: #002200;">:</span><span style="color: #002200;">&#40;</span>NSUInteger<span style="color: #002200;">&#41;</span>sectionIndex
+          forChangeType<span style="color: #002200;">:</span><span style="color: #002200;">&#40;</span>NSFetchedResultsChangeType<span style="color: #002200;">&#41;</span>type
+<span style="color: #002200;">&#123;</span>
+    <span style="color: #a61390;">switch</span> <span style="color: #002200;">&#40;</span>type<span style="color: #002200;">&#41;</span> <span style="color: #002200;">&#123;</span>
+        <span style="color: #a61390;">case</span> NSFetchedResultsChangeInsert<span style="color: #002200;">:</span>
+            <span style="color: #002200;">&#91;</span>self.insertedSectionIndexes addIndex<span style="color: #002200;">:</span>sectionIndex<span style="color: #002200;">&#93;</span>;
+            <span style="color: #a61390;">break</span>;
+        <span style="color: #a61390;">case</span> NSFetchedResultsChangeDelete<span style="color: #002200;">:</span>
+            <span style="color: #002200;">&#91;</span>self.deletedSectionIndexes addIndex<span style="color: #002200;">:</span>sectionIndex<span style="color: #002200;">&#93;</span>;
+            <span style="color: #a61390;">break</span>;
+        <span style="color: #a61390;">default</span><span style="color: #002200;">:</span>
+            ; <span style="color: #11740a; font-style: italic;">// Shouldn't have a default</span>
+            <span style="color: #a61390;">break</span>;
+    <span style="color: #002200;">&#125;</span>
+<span style="color: #002200;">&#125;</span>
+&nbsp;
+<span style="color: #002200;">-</span> <span style="color: #002200;">&#40;</span><span style="color: #a61390;">void</span><span style="color: #002200;">&#41;</span>controllerDidChangeContent<span style="color: #002200;">:</span><span style="color: #002200;">&#40;</span>NSFetchedResultsController <span style="color: #002200;">*</span><span style="color: #002200;">&#41;</span>controller
+<span style="color: #002200;">&#123;</span>
+    <span style="color: #002200;">&#91;</span>self.tableView beginUpdates<span style="color: #002200;">&#93;</span>;
+&nbsp;
+    <span style="color: #002200;">&#91;</span>self.tableView deleteSections<span style="color: #002200;">:</span>self.deletedSectionIndexes withRowAnimation<span style="color: #002200;">:</span>UITableViewRowAnimationAutomatic<span style="color: #002200;">&#93;</span>;
+    <span style="color: #002200;">&#91;</span>self.tableView insertSections<span style="color: #002200;">:</span>self.insertedSectionIndexes withRowAnimation<span style="color: #002200;">:</span>UITableViewRowAnimationAutomatic<span style="color: #002200;">&#93;</span>;
+&nbsp;
+    <span style="color: #002200;">&#91;</span>self.tableView deleteRowsAtIndexPaths<span style="color: #002200;">:</span>self.deletedRowIndexPaths withRowAnimation<span style="color: #002200;">:</span>UITableViewRowAnimationLeft<span style="color: #002200;">&#93;</span>;
+    <span style="color: #002200;">&#91;</span>self.tableView insertRowsAtIndexPaths<span style="color: #002200;">:</span>self.insertedRowIndexPaths withRowAnimation<span style="color: #002200;">:</span>UITableViewRowAnimationRight<span style="color: #002200;">&#93;</span>;
+    <span style="color: #002200;">&#91;</span>self.tableView reloadRowsAtIndexPaths<span style="color: #002200;">:</span>self.updatedRowIndexPaths withRowAnimation<span style="color: #002200;">:</span>UITableViewRowAnimationAutomatic<span style="color: #002200;">&#93;</span>;
+&nbsp;
+    <span style="color: #002200;">&#91;</span>self.tableView endUpdates<span style="color: #002200;">&#93;</span>;
+&nbsp;
+    <span style="color: #11740a; font-style: italic;">// nil out the collections so they are ready for their next use.</span>
+    self.insertedSectionIndexes <span style="color: #002200;">=</span> <span style="color: #a61390;">nil</span>;
+    self.deletedSectionIndexes <span style="color: #002200;">=</span> <span style="color: #a61390;">nil</span>;
+    self.deletedRowIndexPaths <span style="color: #002200;">=</span> <span style="color: #a61390;">nil</span>;
+    self.insertedRowIndexPaths <span style="color: #002200;">=</span> <span style="color: #a61390;">nil</span>;
+    self.updatedRowIndexPaths <span style="color: #002200;">=</span> <span style="color: #a61390;">nil</span>;
+<span style="color: #002200;">&#125;</span>
+&nbsp;
+<span style="color: #6e371a;">#pragma mark - Overridden getters</span>
+&nbsp;
+<span style="color: #11740a; font-style: italic;">/**
+ * Lazily instantiate these collections.
+ */</span>
+&nbsp;
+<span style="color: #002200;">-</span> <span style="color: #002200;">&#40;</span><span style="color: #400080;">NSMutableIndexSet</span> <span style="color: #002200;">*</span><span style="color: #002200;">&#41;</span>deletedSectionIndexes
+<span style="color: #002200;">&#123;</span>
+    <span style="color: #a61390;">if</span> <span style="color: #002200;">&#40;</span>_deletedSectionIndexes <span style="color: #002200;">==</span> <span style="color: #a61390;">nil</span><span style="color: #002200;">&#41;</span> <span style="color: #002200;">&#123;</span>
+        _deletedSectionIndexes <span style="color: #002200;">=</span> <span style="color: #002200;">&#91;</span><span style="color: #002200;">&#91;</span><span style="color: #400080;">NSMutableIndexSet</span> alloc<span style="color: #002200;">&#93;</span> init<span style="color: #002200;">&#93;</span>;
+    <span style="color: #002200;">&#125;</span>
+&nbsp;
+    <span style="color: #a61390;">return</span> _deletedSectionIndexes;
+<span style="color: #002200;">&#125;</span>
+&nbsp;
+<span style="color: #002200;">-</span> <span style="color: #002200;">&#40;</span><span style="color: #400080;">NSMutableIndexSet</span> <span style="color: #002200;">*</span><span style="color: #002200;">&#41;</span>insertedSectionIndexes
+<span style="color: #002200;">&#123;</span>
+    <span style="color: #a61390;">if</span> <span style="color: #002200;">&#40;</span>_insertedSectionIndexes <span style="color: #002200;">==</span> <span style="color: #a61390;">nil</span><span style="color: #002200;">&#41;</span> <span style="color: #002200;">&#123;</span>
+        _insertedSectionIndexes <span style="color: #002200;">=</span> <span style="color: #002200;">&#91;</span><span style="color: #002200;">&#91;</span><span style="color: #400080;">NSMutableIndexSet</span> alloc<span style="color: #002200;">&#93;</span> init<span style="color: #002200;">&#93;</span>;
+    <span style="color: #002200;">&#125;</span>
+&nbsp;
+    <span style="color: #a61390;">return</span> _insertedSectionIndexes;
+<span style="color: #002200;">&#125;</span>
+&nbsp;
+<span style="color: #002200;">-</span> <span style="color: #002200;">&#40;</span><span style="color: #400080;">NSMutableArray</span> <span style="color: #002200;">*</span><span style="color: #002200;">&#41;</span>deletedRowIndexPaths
+<span style="color: #002200;">&#123;</span>
+    <span style="color: #a61390;">if</span> <span style="color: #002200;">&#40;</span>_deletedRowIndexPaths <span style="color: #002200;">==</span> <span style="color: #a61390;">nil</span><span style="color: #002200;">&#41;</span> <span style="color: #002200;">&#123;</span>
+        _deletedRowIndexPaths <span style="color: #002200;">=</span> <span style="color: #002200;">&#91;</span><span style="color: #002200;">&#91;</span><span style="color: #400080;">NSMutableArray</span> alloc<span style="color: #002200;">&#93;</span> init<span style="color: #002200;">&#93;</span>;
+    <span style="color: #002200;">&#125;</span>
+&nbsp;
+    <span style="color: #a61390;">return</span> _deletedRowIndexPaths;
+<span style="color: #002200;">&#125;</span>
+&nbsp;
+<span style="color: #002200;">-</span> <span style="color: #002200;">&#40;</span><span style="color: #400080;">NSMutableArray</span> <span style="color: #002200;">*</span><span style="color: #002200;">&#41;</span>insertedRowIndexPaths
+<span style="color: #002200;">&#123;</span>
+    <span style="color: #a61390;">if</span> <span style="color: #002200;">&#40;</span>_insertedRowIndexPaths <span style="color: #002200;">==</span> <span style="color: #a61390;">nil</span><span style="color: #002200;">&#41;</span> <span style="color: #002200;">&#123;</span>
+        _insertedRowIndexPaths <span style="color: #002200;">=</span> <span style="color: #002200;">&#91;</span><span style="color: #002200;">&#91;</span><span style="color: #400080;">NSMutableArray</span> alloc<span style="color: #002200;">&#93;</span> init<span style="color: #002200;">&#93;</span>;
+    <span style="color: #002200;">&#125;</span>
+&nbsp;
+    <span style="color: #a61390;">return</span> _insertedRowIndexPaths;
+<span style="color: #002200;">&#125;</span>
+&nbsp;
+<span style="color: #002200;">-</span> <span style="color: #002200;">&#40;</span><span style="color: #400080;">NSMutableArray</span> <span style="color: #002200;">*</span><span style="color: #002200;">&#41;</span>updatedRowIndexPaths
+<span style="color: #002200;">&#123;</span>
+    <span style="color: #a61390;">if</span> <span style="color: #002200;">&#40;</span>_updatedRowIndexPaths <span style="color: #002200;">==</span> <span style="color: #a61390;">nil</span><span style="color: #002200;">&#41;</span> <span style="color: #002200;">&#123;</span>
+        _updatedRowIndexPaths <span style="color: #002200;">=</span> <span style="color: #002200;">&#91;</span><span style="color: #002200;">&#91;</span><span style="color: #400080;">NSMutableArray</span> alloc<span style="color: #002200;">&#93;</span> init<span style="color: #002200;">&#93;</span>;
+    <span style="color: #002200;">&#125;</span>
+&nbsp;
+    <span style="color: #a61390;">return</span> _updatedRowIndexPaths;
+<span style="color: #002200;">&#125;</span>
+&nbsp;
+<span style="color: #a61390;">@end</span></pre></td></tr></table></div>
+
+<p>This implementation properly queues all the changes, makes sure not to insert or delete any rows when they are part of an inserted or deleted section, and updates the table in one nice little chunk. You don&#8217;t need to worry about implementing the willChangeContent: delegate method. It also has the benefit that, if you were so inclined, you could see how many updates you were about to perform on the tableView and just call reloadData instead, like so:</p>
+
+<div class="wp_syntax"><table><tr><td class="code"><pre class="objc" style="font-family:monospace;"><span style="color: #002200;">-</span> <span style="color: #002200;">&#40;</span><span style="color: #a61390;">void</span><span style="color: #002200;">&#41;</span>controllerDidChangeContent<span style="color: #002200;">:</span><span style="color: #002200;">&#40;</span>NSFetchedResultsController <span style="color: #002200;">*</span><span style="color: #002200;">&#41;</span>controller
+<span style="color: #002200;">&#123;</span>
+    NSInteger totalChanges <span style="color: #002200;">=</span> <span style="color: #002200;">&#91;</span>self.deletedSectionIndexes count<span style="color: #002200;">&#93;</span> <span style="color: #002200;">+</span> 
+                             <span style="color: #002200;">&#91;</span>self.insertedSectionIndexes count<span style="color: #002200;">&#93;</span> <span style="color: #002200;">+</span> 
+                             <span style="color: #002200;">&#91;</span>self.deletedRowIndexPaths count<span style="color: #002200;">&#93;</span> <span style="color: #002200;">+</span> 
+                             <span style="color: #002200;">&#91;</span>self.insertedRowIndexPaths count<span style="color: #002200;">&#93;</span> <span style="color: #002200;">+</span> 
+                             <span style="color: #002200;">&#91;</span>self.updatedRowIndexPaths count<span style="color: #002200;">&#93;</span>;
+    <span style="color: #a61390;">if</span> <span style="color: #002200;">&#40;</span>totalChanges &gt; <span style="color: #2400d9;">50</span><span style="color: #002200;">&#41;</span> <span style="color: #002200;">&#123;</span>
+        self.insertedSectionIndexes <span style="color: #002200;">=</span> <span style="color: #a61390;">nil</span>;
+        self.deletedSectionIndexes <span style="color: #002200;">=</span> <span style="color: #a61390;">nil</span>;
+        self.deletedRowIndexPaths <span style="color: #002200;">=</span> <span style="color: #a61390;">nil</span>;
+        self.insertedRowIndexPaths <span style="color: #002200;">=</span> <span style="color: #a61390;">nil</span>;
+        self.updatedRowIndexPaths <span style="color: #002200;">=</span> <span style="color: #a61390;">nil</span>;
+&nbsp;
+        <span style="color: #002200;">&#91;</span>self.tableView reloadData<span style="color: #002200;">&#93;</span>;
+        <span style="color: #a61390;">return</span>;
+    <span style="color: #002200;">&#125;</span>
+&nbsp;
+    <span style="color: #002200;">&#91;</span>self.tableView beginUpdates<span style="color: #002200;">&#93;</span>;
+&nbsp;
+    <span style="color: #002200;">&#91;</span>self.tableView deleteSections<span style="color: #002200;">:</span>self.deletedSectionIndexes withRowAnimation<span style="color: #002200;">:</span>UITableViewRowAnimationAutomatic<span style="color: #002200;">&#93;</span>;
+    <span style="color: #002200;">&#91;</span>self.tableView insertSections<span style="color: #002200;">:</span>self.insertedSectionIndexes withRowAnimation<span style="color: #002200;">:</span>UITableViewRowAnimationAutomatic<span style="color: #002200;">&#93;</span>;
+&nbsp;
+    <span style="color: #002200;">&#91;</span>self.tableView deleteRowsAtIndexPaths<span style="color: #002200;">:</span>self.deletedRowIndexPaths withRowAnimation<span style="color: #002200;">:</span>UITableViewRowAnimationLeft<span style="color: #002200;">&#93;</span>;
+    <span style="color: #002200;">&#91;</span>self.tableView insertRowsAtIndexPaths<span style="color: #002200;">:</span>self.insertedRowIndexPaths withRowAnimation<span style="color: #002200;">:</span>UITableViewRowAnimationRight<span style="color: #002200;">&#93;</span>;
+    <span style="color: #002200;">&#91;</span>self.tableView reloadRowsAtIndexPaths<span style="color: #002200;">:</span>self.updatedRowIndexPaths withRowAnimation<span style="color: #002200;">:</span>UITableViewRowAnimationAutomatic<span style="color: #002200;">&#93;</span>;
+&nbsp;
+    <span style="color: #002200;">&#91;</span>self.tableView endUpdates<span style="color: #002200;">&#93;</span>;
+&nbsp;
+    self.insertedSectionIndexes <span style="color: #002200;">=</span> <span style="color: #a61390;">nil</span>;
+    self.deletedSectionIndexes <span style="color: #002200;">=</span> <span style="color: #a61390;">nil</span>;
+    self.deletedRowIndexPaths <span style="color: #002200;">=</span> <span style="color: #a61390;">nil</span>;
+    self.insertedRowIndexPaths <span style="color: #002200;">=</span> <span style="color: #a61390;">nil</span>;
+    self.updatedRowIndexPaths <span style="color: #002200;">=</span> <span style="color: #a61390;">nil</span>;
+<span style="color: #002200;">&#125;</span></pre></td></tr></table></div>
+
+<p>If you&#8217;ve got any questions or if you notice some horrible bug that I&#8217;ve introduced let me know on <a href="http://twitter.com/MrRooni">Twitter</a> or <a href="https://alpha.app.net/mrrooni">App.net</a>, I&#8217;m MrRooni on both.</p>
+<p>And if you&#8217;re the kind of person that likes gists, you can find the above code on GitHub here: <a href="https://gist.github.com/MrRooni/4988922">https://gist.github.com/MrRooni/4988922</a></p>
+			</div>
+
+	
+		This entry was posted in <a href="../../../category/cocoa/index.html" title="View all posts in Cocoa" rel="category tag">Cocoa</a>, <a href="../../../category/sample-code/index.html" title="View all posts in Sample Code" rel="category tag">Sample Code</a>. 
+			
+</article>
+
+					<nav role="navigation" id="nav-below" class="site-navigation post-navigation">
+		
+
+	
+		<div class="nav-previous"><a href="../../../2012/08/quick-and-easy-debugging-of-unrecognized-selector-sent-to-instance/index.html" rel="prev"><span class="meta-nav">&larr;</span> Quick and easy debugging of unrecognized selector sent to instance</a></div>		<div class="nav-next"><a href="../../04/link-dump/index.html" rel="next">Link Dump <span class="meta-nav">&rarr;</span></a></div>
+	
+	</nav>
+	
+				
+			
+			</div>
+		</div>
+
+		
+						
+			
+				
+						
+				</aside>
+
+						</div>
+			
+			
+							
+					<h1 class="widget-title">Archives</h1>
+					<ul>
+							<li><a href='../../05/index.html'>May 2013</a></li>
+	<li><a href='../../04/index.html'>April 2013</a></li>
+	<li><a href='../index.html'>February 2013</a></li>
+	<li><a href='../../../2012/08/index.html'>August 2012</a></li>
+	<li><a href='../../../2012/07/index.html'>July 2012</a></li>
+	<li><a href='../../../2012/06/index.html'>June 2012</a></li>
+	<li><a href='../../../2012/05/index.html'>May 2012</a></li>
+	<li><a href='../../../2010/06/index.html'>June 2010</a></li>
+	<li><a href='../../../2010/03/index.html'>March 2010</a></li>
+	<li><a href='../../../2010/01/index.html'>January 2010</a></li>
+	<li><a href='../../../2009/12/index.html'>December 2009</a></li>
+	<li><a href='../../../2009/10/index.html'>October 2009</a></li>
+	<li><a href='../../../2009/09/index.html'>September 2009</a></li>
+	<li><a href='../../../2009/08/index.html'>August 2009</a></li>
+	<li><a href='../../../2009/07/index.html'>July 2009</a></li>
+	<li><a href='../../../2009/06/index.html'>June 2009</a></li>
+	<li><a href='../../../2009/05/index.html'>May 2009</a></li>
+	<li><a href='../../../2009/04/index.html'>April 2009</a></li>
+	<li><a href='../../../2009/03/index.html'>March 2009</a></li>
+	<li><a href='../../../2009/02/index.html'>February 2009</a></li>
+	<li><a href='../../../2009/01/index.html'>January 2009</a></li>
+	<li><a href='../../../2008/11/index.html'>November 2008</a></li>
+	<li><a href='../../../2008/09/index.html'>September 2008</a></li>
+	<li><a href='../../../2008/08/index.html'>August 2008</a></li>
+	<li><a href='../../../2008/07/index.html'>July 2008</a></li>
+					</ul>
+				</aside>
+						</div>
+			
+			
+							
+					
+					<ul>
+												
+											</ul>
+				</aside>
+						</div>
+		</div>
+
+</div>
+</div>
+
+
+<script type='text/javascript'>
+/* <![CDATA[ */
+var viewsCacheL10n = {"admin_ajax_url":"http:\/\/www.fruitstandsoftware.com\/blog\/wp-admin\/admin-ajax.php","post_id":"635"};
+/* ]]> */
+</script>
+<script type='text/javascript' src='../../../wp-content/plugins/wp-postviews/postviews-cache-ver=1.64.js'></script>
+<script type='text/javascript' src='../../../wp-content/themes/landscape/js/small-menu-ver=20120206.js'></script>
+
+</body>
+</html>
+
+
+

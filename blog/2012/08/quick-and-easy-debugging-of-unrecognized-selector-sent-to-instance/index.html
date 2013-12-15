@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="initial-scale=1">
+<title>Quick and easy debugging of unrecognized selector sent to instance | Core Fruition</title>
+
+
+			<link rel='prev' title='XIBs, Container Views, and Auto Layout (oh my)' href='../../07/xibs-container-views-and-auto-layout-oh-my/index.html' />
+<link rel='next' title='UITableView and NSFetchedResultsController: Updates Done Right' href='../../../2013/02/uitableview-and-nsfetchedresultscontroller-updates-done-right/index.html' />
+</head>
+
+<body class="single single-post postid-629 single-format-standard custom-background group-blog">
+
+
+
+		
+			
+
+			
+				
+<article id="post-629" class="post-629 post type-post status-publish format-standard hentry category-cocoa category-debugging">
+	
+		<h1>Quick and easy debugging of unrecognized selector sent to instance</h1>
+
+		
+			<a href="index.html" title="2:13 PM" rel="bookmark"><time class="entry-date" datetime="2012-08-22T14:13:39+00:00">August 22, 2012</time></a><span class="byline"> by <span class="author vcard"><a class="url fn n" href="../../../author/mrrooni/index.html" title="View all posts by Michael" rel="author">Michael</a></span></span>		</div>
+	
+
+	
+		<p>It&#8217;s happened to all of us; we&#8217;re merrily trucking down the development road, building and testing our app when all of sudden everything grinds to a screeching halt and the console tells us something like:</p>
+<p><strong>-[MoneyWellAppDelegate doThatThingYouDo]: unrecognized selector sent to instance 0xa275230</strong></p>
+<p>Looking at the Xcode backtrace doesn&#8217;t seem to help either since it most likely looks like so:</p>
+<p><a href="../../../wp-content/uploads/2012/08/Screen-Shot-2012-08-22-at-2.02.11-PM.png"><img class="aligncenter size-full wp-image-632" title="Useless Xcode Backtrace" src="../../../wp-content/uploads/2012/08/Screen-Shot-2012-08-22-at-2.02.11-PM.png" alt="" width="394" height="454" /></a></p>
+<p>&nbsp;</p>
+<p>At this point you start the hunt through your code looking to see who sent the -doThatThingYouDo message. You may find the answer right away and things may be all hunky dory, or you may spend the next hour trying to figure out where the hell that call is coming from.</p>
+<p>The good news is there is a better way. All you need to do is pop over to the Breakpoint Navigator, click the + button at the bottom and choose <strong>Add Symbolic Breakpoint&#8230;</strong></p>
+<p>In the <strong>Symbol</strong> field enter this symbol:</p>
+<pre>-[NSObject(NSObject) doesNotRecognizeSelector:]</pre>
+<p>Now when any instance of any object within your program is sent a message to which it does not respond you will be presented with a backtrace that takes you right to the point where that message was sent.</p>
+<p><a href="../../../wp-content/uploads/2012/08/Screen-Shot-2012-08-22-at-2.09.04-PM.png"><img class="aligncenter size-full wp-image-633" title="A much less useless Xcode backtrace" src="../../../wp-content/uploads/2012/08/Screen-Shot-2012-08-22-at-2.09.04-PM.png" alt="" width="388" height="512" /></a></p>
+<p>&nbsp;</p>
+<p>Cheers and happy debugging.</p>
+			</div>
+
+	
+		This entry was posted in <a href="../../../category/cocoa/index.html" title="View all posts in Cocoa" rel="category tag">Cocoa</a>, <a href="../../../category/debugging/index.html" title="View all posts in Debugging" rel="category tag">Debugging</a>. 
+			
+</article>
+
+					<nav role="navigation" id="nav-below" class="site-navigation post-navigation">
+		
+
+	
+		<div class="nav-previous"><a href="../../07/xibs-container-views-and-auto-layout-oh-my/index.html" rel="prev"><span class="meta-nav">&larr;</span> XIBs, Container Views, and Auto Layout (oh my)</a></div>		<div class="nav-next"><a href="../../../2013/02/uitableview-and-nsfetchedresultscontroller-updates-done-right/index.html" rel="next">UITableView and NSFetchedResultsController: Updates Done Right <span class="meta-nav">&rarr;</span></a></div>
+	
+	</nav>
+	
+				
+			
+			</div>
+		</div>
+
+		
+						
+			
+				
+						
+				</aside>
+
+						</div>
+			
+			
+							
+					<h1 class="widget-title">Archives</h1>
+					<ul>
+							<li><a href='../../../2013/05/index.html'>May 2013</a></li>
+	<li><a href='../../../2013/04/index.html'>April 2013</a></li>
+	<li><a href='../../../2013/02/index.html'>February 2013</a></li>
+	<li><a href='../index.html'>August 2012</a></li>
+	<li><a href='../../07/index.html'>July 2012</a></li>
+	<li><a href='../../06/index.html'>June 2012</a></li>
+	<li><a href='../../05/index.html'>May 2012</a></li>
+	<li><a href='../../../2010/06/index.html'>June 2010</a></li>
+	<li><a href='../../../2010/03/index.html'>March 2010</a></li>
+	<li><a href='../../../2010/01/index.html'>January 2010</a></li>
+	<li><a href='../../../2009/12/index.html'>December 2009</a></li>
+	<li><a href='../../../2009/10/index.html'>October 2009</a></li>
+	<li><a href='../../../2009/09/index.html'>September 2009</a></li>
+	<li><a href='../../../2009/08/index.html'>August 2009</a></li>
+	<li><a href='../../../2009/07/index.html'>July 2009</a></li>
+	<li><a href='../../../2009/06/index.html'>June 2009</a></li>
+	<li><a href='../../../2009/05/index.html'>May 2009</a></li>
+	<li><a href='../../../2009/04/index.html'>April 2009</a></li>
+	<li><a href='../../../2009/03/index.html'>March 2009</a></li>
+	<li><a href='../../../2009/02/index.html'>February 2009</a></li>
+	<li><a href='../../../2009/01/index.html'>January 2009</a></li>
+	<li><a href='../../../2008/11/index.html'>November 2008</a></li>
+	<li><a href='../../../2008/09/index.html'>September 2008</a></li>
+	<li><a href='../../../2008/08/index.html'>August 2008</a></li>
+	<li><a href='../../../2008/07/index.html'>July 2008</a></li>
+					</ul>
+				</aside>
+						</div>
+			
+			
+							
+					
+					<ul>
+												
+											</ul>
+				</aside>
+						</div>
+		</div>
+
+</div>
+</div>
+
+
+<script type='text/javascript'>
+/* <![CDATA[ */
+var viewsCacheL10n = {"admin_ajax_url":"http:\/\/www.fruitstandsoftware.com\/blog\/wp-admin\/admin-ajax.php","post_id":"629"};
+/* ]]> */
+</script>
+<script type='text/javascript' src='../../../wp-content/plugins/wp-postviews/postviews-cache-ver=1.64.js'></script>
+<script type='text/javascript' src='../../../wp-content/themes/landscape/js/small-menu-ver=20120206.js'></script>
+
+</body>
+</html>
+
+
+
