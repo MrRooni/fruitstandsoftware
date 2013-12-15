@@ -1,57 +1,61 @@
 <!DOCTYPE html>
+
 <html lang="en-US">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="initial-scale=1">
-<title>XIBs, Container Views, and Auto Layout (oh my) | Core Fruition</title>
+  <meta name="generator" content="HTML Tidy for Mac OS X (vers 31 October 2006 - Apple Inc. build 15.12), see www.w3.org">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="initial-scale=1">
 
-
-			<link rel='prev' title='WWDC 2012 Photo Walk Wrap-Up' href='../../06/wwdc-2012-photo-walk-wrap-up/index.html' />
-<link rel='next' title='Quick and easy debugging of unrecognized selector sent to instance' href='../../08/quick-and-easy-debugging-of-unrecognized-selector-sent-to-instance/index.html' />
+  <title>XIBs, Container Views, and Auto Layout (oh my) | Core Fruition</title>
+  <link rel='prev' title='WWDC 2012 Photo Walk Wrap-Up' href='../../06/wwdc-2012-photo-walk-wrap-up/index.html'>
+  <link rel='next' title='Quick and easy debugging of unrecognized selector sent to instance' href='../../08/quick-and-easy-debugging-of-unrecognized-selector-sent-to-instance/index.html'>
 </head>
 
-<body class="single single-post postid-596 single-format-standard custom-background group-blog">
+<body>
+  <h1>XIBs, Container Views, and Auto Layout (oh my)</h1><a href="index.html" title="4:23 PM" rel="bookmark"></a>
 
+  <p>While working on a major update for one of our products at <a href="http://nothirst.com/">No Thirst</a>&#194;&nbsp;I ran across a small implementation question: In the world of auto layout, if you have a window whose subviews are managed by view controllers, what is the best way to layout these subviews? In the realm of springs and struts the answer is pretty straightforward: You add container views to your window, define their autoresizing masks in the XIB, add your view controller views as subviews of the container views in code, and set their&#194;&nbsp;frame sizes to match their container view frame sizes. As long as you set the autoresizing masks of the view controller views to be <strong>NSViewHeightSizable | NSViewWidthSizable</strong> in their XIBs you get the behavior you&#8217;re expecting and the code is pretty minimal.</p>
 
+  <div id="attachment_605" style="width: 523px" class="wp-caption aligncenter">
+    <a href="../../../wp-content/uploads/2012/07/ShmetBencherWindow.png"><img class="size-full wp-image-605" title="ShmetBencherWindow" src="../../../wp-content/uploads/2012/07/ShmetBencherWindow.png" alt="" width="513" height="360"></a>
 
-		
-			
+    <p class="wp-caption-text">This is the window we&#8217;re trying to create</p>
+  </div>
 
-			
-				
+  <p>&nbsp;</p>
 
-	
-		<h1>XIBs, Container Views, and Auto Layout (oh my)</h1>
+  <p>If you try to follow a similar pattern while using auto layout and do most of your work in XIBs with very little code you hit a bit of a curve in the road. With springs and struts you set your autoresizing masks on individual views allowing you to define what each view controller&#8217;s view should do when added to a super view. Layout constraints (instances of <a href="https://developer.apple.com/library/mac/#documentation/AppKit/Reference/NSLayoutConstraint_Class/NSLayoutConstraint/NSLayoutConstraint.html" target="_blank">NSLayoutConstraint</a>) define relationships <strong><em>between</em></strong> views. This means that in order to create a layout constraint between two views both views need to be present at the time the relationship is defined. Thinking I could outsmart the system I had what I thought was a eureka moment. &#8220;Ah ha!&#8221; I thought, &#8220;I&#8217;ll follow the same pattern of using container views, but in each view controller&#8217;s awakeFromNib I&#8217;ll set up some constraints that mimic&#194;&nbsp;NSViewHeightSizable | NSViewWidthSizable. I&#8217;m a GENIUS!&#8221;</p>
 
-		
-			<a href="index.html" title="4:23 PM" rel="bookmark">
-	
-
-	
-		<p>While working on a major update for one of our products at <a href="http://nothirst.com/">No Thirst</a> I ran across a small implementation question: In the world of auto layout, if you have a window whose subviews are managed by view controllers, what is the best way to layout these subviews? In the realm of springs and struts the answer is pretty straightforward: You add container views to your window, define their autoresizing masks in the XIB, add your view controller views as subviews of the container views in code, and set their frame sizes to match their container view frame sizes. As long as you set the autoresizing masks of the view controller views to be <strong>NSViewHeightSizable | NSViewWidthSizable</strong> in their XIBs you get the behavior you&#8217;re expecting and the code is pretty minimal.</p>
-<div id="attachment_605" style="width: 523px" class="wp-caption aligncenter"><a href="../../../wp-content/uploads/2012/07/ShmetBencherWindow.png"><img class="size-full wp-image-605 " title="ShmetBencherWindow" src="../../../wp-content/uploads/2012/07/ShmetBencherWindow.png" alt="" width="513" height="360" /></a><p class="wp-caption-text">This is the window we&#8217;re trying to create</p></div>
-<p>&nbsp;</p>
-<p>If you try to follow a similar pattern while using auto layout and do most of your work in XIBs with very little code you hit a bit of a curve in the road. With springs and struts you set your autoresizing masks on individual views allowing you to define what each view controller&#8217;s view should do when added to a super view. Layout constraints (instances of <a href="https://developer.apple.com/library/mac/#documentation/AppKit/Reference/NSLayoutConstraint_Class/NSLayoutConstraint/NSLayoutConstraint.html" target="_blank">NSLayoutConstraint</a>) define relationships <strong><em>between</em></strong> views. This means that in order to create a layout constraint between two views both views need to be present at the time the relationship is defined. Thinking I could outsmart the system I had what I thought was a eureka moment. &#8220;Ah ha!&#8221; I thought, &#8220;I&#8217;ll follow the same pattern of using container views, but in each view controller&#8217;s awakeFromNib I&#8217;ll set up some constraints that mimic NSViewHeightSizable | NSViewWidthSizable. I&#8217;m a GENIUS!&#8221;</p>
-
-<div class="wp_syntax"><table><tr><td class="code"><pre class="objc" style="font-family:monospace;"><span style="color: #002200;">-</span> <span style="color: #002200;">&#40;</span><span style="color: #a61390;">void</span><span style="color: #002200;">&#41;</span>awakeFromNib
-<span style="color: #002200;">&#123;</span>
-    <span style="color: #400080;">NSDictionary</span> <span style="color: #002200;">*</span>viewsDictionary <span style="color: #002200;">=</span> @<span style="color: #002200;">&#123;</span> <span style="color: #bf1d1a;">@</span><span style="color: #bf1d1a;">&quot;view&quot;</span><span style="color: #002200;">:</span>self.view <span style="color: #002200;">&#125;</span>;
-&nbsp;
-    <span style="color: #400080;">NSArray</span> <span style="color: #002200;">*</span>horizontalMaximizingConstraints <span style="color: #002200;">=</span> <span style="color: #002200;">&#91;</span>NSLayoutConstraint constraintsWithVisualFormat<span style="color: #002200;">:</span><span style="color: #bf1d1a;">@</span><span style="color: #bf1d1a;">&quot;|[view]|&quot;</span>
+  <div class="wp_syntax">
+    <table>
+      <tr>
+        <td class="code">
+          <pre class="objc" style="font-family:monospace;">
+<span style="color: #002200;">-</span> <span style="color: #002200;">(</span><span style="color: #a61390;">void</span><span style="color: #002200;">)</span>awakeFromNib
+<span style="color: #002200;">{</span>
+    <span style="color: #400080;">NSDictionary</span> <span style="color: #002200;">*</span>viewsDictionary <span style="color: #002200;">=</span> @<span style="color: #002200;">{</span> <span style="color: #bf1d1a;">@</span><span style="color: #bf1d1a;">"view"</span><span style="color: #002200;">:</span>self.view <span style="color: #002200;">}</span>;
+ 
+    <span style="color: #400080;">NSArray</span> <span style="color: #002200;">*</span>horizontalMaximizingConstraints <span style="color: #002200;">=</span>&#194; <span style="color: #002200;">[</span>NSLayoutConstraint constraintsWithVisualFormat<span style="color: #002200;">:</span><span style="color: #bf1d1a;">@</span><span style="color: #bf1d1a;">"|[view]|"</span>
                                                                                        options<span style="color: #002200;">:</span><span style="color: #2400d9;">0</span> 
                                                                                        metrics<span style="color: #002200;">:</span><span style="color: #a61390;">nil</span> 
-                                                                                         views<span style="color: #002200;">:</span>viewsDictionary<span style="color: #002200;">&#93;</span>;
-&nbsp;
-    <span style="color: #400080;">NSArray</span> <span style="color: #002200;">*</span>verticalMaximizingConstraints <span style="color: #002200;">=</span> <span style="color: #002200;">&#91;</span>NSLayoutConstraint constraintsWithVisualFormat<span style="color: #002200;">:</span><span style="color: #bf1d1a;">@</span><span style="color: #bf1d1a;">&quot;V:|[view]|&quot;</span> 
+                                                                                         views<span style="color: #002200;">:</span>viewsDictionary<span style="color: #002200;">]</span>;
+ 
+    <span style="color: #400080;">NSArray</span> <span style="color: #002200;">*</span>verticalMaximizingConstraints <span style="color: #002200;">=</span> <span style="color: #002200;">[</span>NSLayoutConstraint constraintsWithVisualFormat<span style="color: #002200;">:</span><span style="color: #bf1d1a;">@</span><span style="color: #bf1d1a;">"V:|[view]|"</span> 
                                                                                      options<span style="color: #002200;">:</span><span style="color: #2400d9;">0</span> 
                                                                                      metrics<span style="color: #002200;">:</span><span style="color: #a61390;">nil</span> 
-                                                                                       views<span style="color: #002200;">:</span>viewsDictionary<span style="color: #002200;">&#93;</span>;
-    <span style="color: #002200;">&#91;</span>self.view addConstraints<span style="color: #002200;">:</span>horizontalMaximizingConstraints<span style="color: #002200;">&#93;</span>;
-    <span style="color: #002200;">&#91;</span>self.view addConstraints<span style="color: #002200;">:</span>verticalMaximizingConstraints<span style="color: #002200;">&#93;</span>;
-<span style="color: #002200;">&#125;</span></pre></td></tr></table></div>
+                                                                                       views<span style="color: #002200;">:</span>viewsDictionary<span style="color: #002200;">]</span>;
+    <span style="color: #002200;">[</span>self.view addConstraints<span style="color: #002200;">:</span>horizontalMaximizingConstraints<span style="color: #002200;">]</span>;
+    <span style="color: #002200;">[</span>self.view addConstraints<span style="color: #002200;">:</span>verticalMaximizingConstraints<span style="color: #002200;">]</span>;
+<span style="color: #002200;">}</span>
+</pre>
+        </td>
+      </tr>
+    </table>
+  </div>
 
-<p>Uh, yeah, not so much:</p>
-<pre>2012-07-11 14:02:07.339 Shmet Bencher[15158:303] *** Terminating app due to uncaught 
+  <p>Uh, yeah, not so much:</p>
+  <pre>
+2012-07-11 14:02:07.339 Shmet Bencher[15158:303] *** Terminating app due to uncaught 
 
 exception 'NSInvalidArgumentException', reason: 'Unable to parse constraint format: 
 
@@ -59,115 +63,113 @@ Unable to interpret '|' character, because the related view doesn't have a super
 
 |[view]| 
 
-       ^'</pre>
-<p>Apparently there was a reason interface builder wouldn’t let me define those constraints visually.</p>
-<h2>Possible Solutions</h2>
-<p>As far as I can see there are two possible solutions to the original question:</p>
-<div>
-<ol>
-<li>Follow the container view pattern. In your XIB you define the relationships between the container views and then in code you add your view controller views to those container views and set up constraints similar to the ones I posted above. The difference being that the | character will now represent a super view that actually exists.</li>
-<li>Skip container views, leave your XIB alone, add all your view controller views as direct subviews of the window and then define the relationships between them.</li>
-</ol>
-<p>Option 1 is great because working with auto layout in interface builder allows you to see the immediate results of changing constraints. However, interface builder will also inject constraints into your layout as you&#8217;re working to try and make sure you don&#8217;t end up with an ambiguous layout or unsatisfiable constraints. Option 1 is also nice because the code you end up writing to add the view controller views to their containers essentially becomes boilerplate. Yes, there is a lot of it, but because of the nature of it, it&#8217;s easy to see when you&#8217;ve made a mistake.</p>
-<p>Option 2 is great because you&#8217;ve reduced your view hierarchy and the constraints associated with each view were put there by you without interface builder getting in the way. Option 2 does suffer from the annoying side effects of having to write more code and not allowing you to play with your window size to see how constraints react until you&#8217;ve created a set of constraints that properly defines the layout for the entire window.</p>
-<p>So what&#8217;s the answer?</p>
-</div>
-<h2>The Answer</h2>
-<p>The answer, of course, is, &#8220;it depends&#8221;. According to Apple you should define your constraints using these methods, in descending order of preference:</p>
-<ul>
-<li>Within interface builder</li>
-<li>Using the visual format language in code (as I did above)</li>
-<li>Individually using the <strong>constraintWithItem:attribute:relatedBy:toItem:attribute:multiplier:constant:</strong> class method on NSLayoutConstraint</li>
-</ul>
-<p>In this particular case I&#8217;m going to charge forward with Option 2 and I will update this post if that turns out to be a horrible idea. If I had a mixture of other elements in this window like labels or other buttons I&#8217;d probably go for Option 1 but since it&#8217;s just views, and only a handful of them at that, I&#8217;m going to code it. However, for all of the view controller views I will be doing their layout in interface builder.</p>
-<p>If you&#8217;ve got some feedback, typos to point out, or just want to type obscenities at me, you should get in touch with me via Twitter: <a href="http://twitter.com/MrRooni" target="_blank">@MrRooni</a></p>
-<p>If any of the information above is misinformed or just plain wrong definitely get in touch.</p>
-			</div>
+       ^'
+</pre>
 
-	
-		This entry was posted in <a href="../../../category/cocoa/index.html" title="View all posts in Cocoa" rel="category tag">Cocoa</a>, <a href="../../../category/sample-code/index.html" title="View all posts in Sample Code" rel="category tag">Sample Code</a>. 
-			
+  <p>Apparently there was a reason interface builder&#194;&nbsp;wouldn&#226;&#8364;&#8482;t let me define those constraints visually.</p>
 
+  <h2>Possible Solutions</h2>
 
-					
-		
+  <p>As far as I can see there are two possible solutions to the original question:</p>
 
-	
-		<div class="nav-previous"><a href="../../06/wwdc-2012-photo-walk-wrap-up/index.html" rel="prev"><span class="meta-nav">&larr;</span> WWDC 2012 Photo Walk Wrap-Up</a></div>		<div class="nav-next"><a href="../../08/quick-and-easy-debugging-of-unrecognized-selector-sent-to-instance/index.html" rel="next">Quick and easy debugging of unrecognized selector sent to instance <span class="meta-nav">&rarr;</span></a></div>
-	
-	
-	
-				
-			
-			</div>
-		</div>
+  <div>
+    <ol>
+      <li>Follow the container view pattern. In your XIB you define the relationships between the container views and then in code you add your view controller views to those container views and set up constraints similar to the ones I posted above. The difference being that the | character will now represent a super view that actually exists.</li>
 
-		
-						
-			
-				
-						
-				</aside>
+      <li>Skip container views, leave your XIB alone, add all your view controller views as direct subviews of the window and then define the relationships between them.</li>
+    </ol>
 
-						</div>
-			
-			
-							
-					<h1 class="widget-title">Archives</h1>
-					<ul>
-							<li><a href='../../../2013/05/index.html'>May 2013</a></li>
-	<li><a href='../../../2013/04/index.html'>April 2013</a></li>
-	<li><a href='../../../2013/02/index.html'>February 2013</a></li>
-	<li><a href='../../08/index.html'>August 2012</a></li>
-	<li><a href='../index.html'>July 2012</a></li>
-	<li><a href='../../06/index.html'>June 2012</a></li>
-	<li><a href='../../05/index.html'>May 2012</a></li>
-	<li><a href='../../../2010/06/index.html'>June 2010</a></li>
-	<li><a href='../../../2010/03/index.html'>March 2010</a></li>
-	<li><a href='../../../2010/01/index.html'>January 2010</a></li>
-	<li><a href='../../../2009/12/index.html'>December 2009</a></li>
-	<li><a href='../../../2009/10/index.html'>October 2009</a></li>
-	<li><a href='../../../2009/09/index.html'>September 2009</a></li>
-	<li><a href='../../../2009/08/index.html'>August 2009</a></li>
-	<li><a href='../../../2009/07/index.html'>July 2009</a></li>
-	<li><a href='../../../2009/06/index.html'>June 2009</a></li>
-	<li><a href='../../../2009/05/index.html'>May 2009</a></li>
-	<li><a href='../../../2009/04/index.html'>April 2009</a></li>
-	<li><a href='../../../2009/03/index.html'>March 2009</a></li>
-	<li><a href='../../../2009/02/index.html'>February 2009</a></li>
-	<li><a href='../../../2009/01/index.html'>January 2009</a></li>
-	<li><a href='../../../2008/11/index.html'>November 2008</a></li>
-	<li><a href='../../../2008/09/index.html'>September 2008</a></li>
-	<li><a href='../../../2008/08/index.html'>August 2008</a></li>
-	<li><a href='../../../2008/07/index.html'>July 2008</a></li>
-					</ul>
-				</aside>
-						</div>
-			
-			
-							
-					
-					<ul>
-												
-											</ul>
-				</aside>
-						</div>
-		</div>
+    <p>Option 1 is great because working with auto layout in interface builder allows you to see the immediate results of changing constraints. However, interface builder will also inject constraints into your layout as you&#8217;re working to try and make sure you don&#8217;t end up with an ambiguous layout or unsatisfiable constraints. Option 1 is also nice because the code you end up writing to add the view controller views to their containers essentially becomes boilerplate. Yes, there is a lot of it, but because of the nature of it, it&#8217;s easy to see when you&#8217;ve made a mistake.</p>
 
-</div>
-</div>
+    <p>Option 2 is great because you&#8217;ve reduced your view hierarchy and the constraints associated with each view were put there by you without interface builder getting in the way. Option 2 does suffer from the annoying side effects of having to write more code and not allowing you to play with your window size to see how constraints react until you&#8217;ve created a set of constraints that properly defines the layout for the entire window.</p>
 
+    <p>So what&#8217;s the answer?</p>
+  </div>
 
-<script type='text/javascript'>
+  <h2>The Answer</h2>
+
+  <p>The answer, of course, is, &#8220;it depends&#8221;. According to Apple you should define your constraints using these methods, in descending order of preference:</p>
+
+  <ul>
+    <li>Within interface builder</li>
+
+    <li>Using the visual format language&#194;&nbsp;in code (as I did above)</li>
+
+    <li>Individually using the&#194;&nbsp;<strong>constraintWithItem:attribute:relatedBy:toItem:attribute:multiplier:constant:</strong> class method on NSLayoutConstraint</li>
+  </ul>
+
+  <p>In this particular case I&#8217;m going to charge forward with Option 2 and I will update this post if that turns out to be a horrible idea. If I had a mixture of other elements in this window like labels or other buttons I&#8217;d probably go for Option 1 but since it&#8217;s just views, and only a handful of them at that, I&#8217;m going to code it. However, for all of the view controller views I will be doing their layout in interface builder.</p>
+
+  <p>If you&#8217;ve got some feedback, typos to point out, or just want to type obscenities at me, you should get in touch with me via Twitter: <a href="http://twitter.com/MrRooni" target="_blank">@MrRooni</a></p>
+
+  <p>If any of the information above is misinformed or just plain wrong definitely get in touch.</p>This entry was posted in <a href="../../../category/cocoa/index.html" title="View all posts in Cocoa" rel="category tag">Cocoa</a>, <a href="../../../category/sample-code/index.html" title="View all posts in Sample Code" rel="category tag">Sample Code</a>.
+
+  <div class="nav-previous">
+    <a href="../../06/wwdc-2012-photo-walk-wrap-up/index.html" rel="prev"><span class="meta-nav">&#8592;</span> WWDC 2012 Photo Walk Wrap-Up</a>
+  </div>
+
+  <div class="nav-next">
+    <a href="../../08/quick-and-easy-debugging-of-unrecognized-selector-sent-to-instance/index.html" rel="next">Quick and easy debugging of unrecognized selector sent to instance <span class="meta-nav">&#8594;</span></a>
+  </div>
+
+  <h1 class="widget-title">Archives</h1>
+
+  <ul>
+    <li><a href='../../../2013/05/index.html'>May 2013</a></li>
+
+    <li><a href='../../../2013/04/index.html'>April 2013</a></li>
+
+    <li><a href='../../../2013/02/index.html'>February 2013</a></li>
+
+    <li><a href='../../08/index.html'>August 2012</a></li>
+
+    <li><a href='../index.html'>July 2012</a></li>
+
+    <li><a href='../../06/index.html'>June 2012</a></li>
+
+    <li><a href='../../05/index.html'>May 2012</a></li>
+
+    <li><a href='../../../2010/06/index.html'>June 2010</a></li>
+
+    <li><a href='../../../2010/03/index.html'>March 2010</a></li>
+
+    <li><a href='../../../2010/01/index.html'>January 2010</a></li>
+
+    <li><a href='../../../2009/12/index.html'>December 2009</a></li>
+
+    <li><a href='../../../2009/10/index.html'>October 2009</a></li>
+
+    <li><a href='../../../2009/09/index.html'>September 2009</a></li>
+
+    <li><a href='../../../2009/08/index.html'>August 2009</a></li>
+
+    <li><a href='../../../2009/07/index.html'>July 2009</a></li>
+
+    <li><a href='../../../2009/06/index.html'>June 2009</a></li>
+
+    <li><a href='../../../2009/05/index.html'>May 2009</a></li>
+
+    <li><a href='../../../2009/04/index.html'>April 2009</a></li>
+
+    <li><a href='../../../2009/03/index.html'>March 2009</a></li>
+
+    <li><a href='../../../2009/02/index.html'>February 2009</a></li>
+
+    <li><a href='../../../2009/01/index.html'>January 2009</a></li>
+
+    <li><a href='../../../2008/11/index.html'>November 2008</a></li>
+
+    <li><a href='../../../2008/09/index.html'>September 2008</a></li>
+
+    <li><a href='../../../2008/08/index.html'>August 2008</a></li>
+
+    <li><a href='../../../2008/07/index.html'>July 2008</a></li>
+  </ul><script type='text/javascript'>
 /* <![CDATA[ */
-var viewsCacheL10n = {"admin_ajax_url":"http:\/\/www.fruitstandsoftware.com\/blog\/wp-admin\/admin-ajax.php","post_id":"596"};
-/* ]]> */
+  var viewsCacheL10n = {"admin_ajax_url":"http:\/\/www.fruitstandsoftware.com\/blog\/wp-admin\/admin-ajax.php","post_id":"596"};
+  /* ]]> */
+  </script><script type='text/javascript' src='../../../wp-content/plugins/wp-postviews/postviews-cache-ver=1.64.js'>
+</script><script type='text/javascript' src='../../../wp-content/themes/landscape/js/small-menu-ver=20120206.js'>
 </script>
-<script type='text/javascript' src='../../../wp-content/plugins/wp-postviews/postviews-cache-ver=1.64.js'></script>
-<script type='text/javascript' src='../../../wp-content/themes/landscape/js/small-menu-ver=20120206.js'></script>
-
 </body>
 </html>
-
-
-

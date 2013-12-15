@@ -1,290 +1,273 @@
 <!DOCTYPE html>
+
 <html lang="en-US">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="initial-scale=1">
-<title>UIView Manipulation Made Easier with a Category | Core Fruition</title>
+  <meta name="generator" content="HTML Tidy for Mac OS X (vers 31 October 2006 - Apple Inc. build 15.12), see www.w3.org">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="initial-scale=1">
 
-
-			<link rel="alternate" type="application/rss+xml" title="Core Fruition &raquo; UIView Manipulation Made Easier with a Category Comments Feed" href="feed/index.html" />
-<link rel='prev' title='Standard iPhone Element Sizes' href='../standard-iphone-element-sizes/index.html' />
-<link rel='next' title='Your New Friends: Obj-C Associated Objects' href='../../08/your-new-friends-obj-c-associated-objects/index.html' />
+  <title>UIView Manipulation Made Easier with a Category | Core Fruition</title>
+  <link rel="alternate" type="application/rss+xml" title="Core Fruition &#187; UIView Manipulation Made Easier with a Category Comments Feed" href="feed/index.html">
+  <link rel='prev' title='Standard iPhone Element Sizes' href='../standard-iphone-element-sizes/index.html'>
+  <link rel='next' title='Your New Friends: Obj-C Associated Objects' href='../../08/your-new-friends-obj-c-associated-objects/index.html'>
 </head>
 
-<body class="single single-post postid-345 single-format-standard custom-background group-blog">
+<body>
+  <h1>UIView Manipulation Made Easier with a Category</h1><a href="index.html" title="2:30 PM" rel="bookmark"></a>
 
+  <p>I was watching a presentation recently where the presenter showed the header for a category that he had added to UIView to make his life a little easier. The point of the talk did not center around the category so I never saw much more than the header, but that was all I needed to recreate it for my use. Here&#8217;s the header:</p>
 
-
-		
-			
-
-			
-				
-
-	
-		<h1>UIView Manipulation Made Easier with a Category</h1>
-
-		
-			<a href="index.html" title="2:30 PM" rel="bookmark">
-	
-
-	
-		<p>I was watching a presentation recently where the presenter showed the header for a category that he had added to UIView to make his life a little easier.  The point of the talk did not center around the category so I never saw much more than the header, but that was all I needed to recreate it for my use.  Here&#8217;s the header:</p>
-
-<div class="wp_syntax"><table><tr><td class="code"><pre class="objc" style="font-family:monospace;"><span style="color: #6e371a;">#import &lt;uikit/UIKit.h&gt;</span>
-&nbsp;
-<span style="color: #a61390;">@interface</span> UIView <span style="color: #002200;">&#40;</span>MFAdditions<span style="color: #002200;">&#41;</span>
-&nbsp;
-<span style="color: #002200;">-</span> <span style="color: #002200;">&#40;</span><span style="color: #a61390;">id</span><span style="color: #002200;">&#41;</span> initWithParent<span style="color: #002200;">:</span><span style="color: #002200;">&#40;</span>UIView <span style="color: #002200;">*</span><span style="color: #002200;">&#41;</span>parent;
-<span style="color: #002200;">+</span> <span style="color: #002200;">&#40;</span><span style="color: #a61390;">id</span><span style="color: #002200;">&#41;</span> viewWithParent<span style="color: #002200;">:</span><span style="color: #002200;">&#40;</span>UIView <span style="color: #002200;">*</span><span style="color: #002200;">&#41;</span>parent;
-&nbsp;
+  <div class="wp_syntax">
+    <table>
+      <tr>
+        <td class="code">
+          <pre class="objc" style="font-family:monospace;">
+<span style="color: #6e371a;">#import &lt;uikit/UIKit.h&gt;</span>
+ 
+<span style="color: #a61390;">@interface</span> UIView <span style="color: #002200;">(</span>MFAdditions<span style="color: #002200;">)</span>
+ 
+<span style="color: #002200;">-</span> <span style="color: #002200;">(</span><span style="color: #a61390;">id</span><span style="color: #002200;">)</span> initWithParent<span style="color: #002200;">:</span><span style="color: #002200;">(</span>UIView <span style="color: #002200;">*</span><span style="color: #002200;">)</span>parent;
+<span style="color: #002200;">+</span> <span style="color: #002200;">(</span><span style="color: #a61390;">id</span><span style="color: #002200;">)</span> viewWithParent<span style="color: #002200;">:</span><span style="color: #002200;">(</span>UIView <span style="color: #002200;">*</span><span style="color: #002200;">)</span>parent;
+ 
 <span style="color: #11740a; font-style: italic;">// Position of the top-left corner in superview's coordinates</span>
 <span style="color: #a61390;">@property</span> CGPoint position;
 <span style="color: #a61390;">@property</span> CGFloat x;
 <span style="color: #a61390;">@property</span> CGFloat y;
-&nbsp;
+ 
 <span style="color: #11740a; font-style: italic;">// Setting size keeps the position (top-left corner) constant</span>
 <span style="color: #a61390;">@property</span> CGSize size;
 <span style="color: #a61390;">@property</span> CGFloat width;
 <span style="color: #a61390;">@property</span> CGFloat height;
-&nbsp;
-<span style="color: #a61390;">@end</span></pre></td></tr></table></div>
+ 
+<span style="color: #a61390;">@end</span>
+</pre>
+        </td>
+      </tr>
+    </table>
+  </div>
 
-<p>As you can see there isn&#8217;t a whole lot to this category, but if you&#8217;re doing a lot of view manipulation the benefits of it will rapidly become clear.  There was one sticky wicket that I hit when implementing this class and it centers around this method:</p>
+  <p>As you can see there isn&#8217;t a whole lot to this category, but if you&#8217;re doing a lot of view manipulation the benefits of it will rapidly become clear. There was one sticky wicket that I hit when implementing this class and it centers around this method:</p>
 
-<div class="wp_syntax"><table><tr><td class="code"><pre class="objc" style="font-family:monospace;"><span style="color: #002200;">+</span> <span style="color: #002200;">&#40;</span><span style="color: #a61390;">id</span><span style="color: #002200;">&#41;</span> viewWithParent<span style="color: #002200;">:</span><span style="color: #002200;">&#40;</span>UIView <span style="color: #002200;">*</span><span style="color: #002200;">&#41;</span>parent;</pre></td></tr></table></div>
+  <div class="wp_syntax">
+    <table>
+      <tr>
+        <td class="code">
+          <pre class="objc" style="font-family:monospace;">
+<span style="color: #002200;">+</span> <span style="color: #002200;">(</span><span style="color: #a61390;">id</span><span style="color: #002200;">)</span> viewWithParent<span style="color: #002200;">:</span><span style="color: #002200;">(</span>UIView <span style="color: #002200;">*</span><span style="color: #002200;">)</span>parent;
+</pre>
+        </td>
+      </tr>
+    </table>
+  </div>
 
-<p>When I first implemented this method I wrote it like so:</p>
+  <p>When I first implemented this method I wrote it like so:</p>
 
-<div class="wp_syntax"><table><tr><td class="code"><pre class="objc" style="font-family:monospace;"><span style="color: #002200;">+</span> <span style="color: #002200;">&#40;</span><span style="color: #a61390;">id</span><span style="color: #002200;">&#41;</span> viewWithParent<span style="color: #002200;">:</span><span style="color: #002200;">&#40;</span>UIView <span style="color: #002200;">*</span><span style="color: #002200;">&#41;</span>parent <span style="color: #002200;">&#123;</span>
-	<span style="color: #a61390;">return</span> <span style="color: #002200;">&#91;</span><span style="color: #002200;">&#91;</span><span style="color: #002200;">&#91;</span>UIView alloc<span style="color: #002200;">&#93;</span> initWithParent<span style="color: #002200;">:</span>parent<span style="color: #002200;">&#93;</span> autorelease<span style="color: #002200;">&#93;</span>;
-<span style="color: #002200;">&#125;</span></pre></td></tr></table></div>
+  <div class="wp_syntax">
+    <table>
+      <tr>
+        <td class="code">
+          <pre class="objc" style="font-family:monospace;">
+<span style="color: #002200;">+</span> <span style="color: #002200;">(</span><span style="color: #a61390;">id</span><span style="color: #002200;">)</span> viewWithParent<span style="color: #002200;">:</span><span style="color: #002200;">(</span>UIView <span style="color: #002200;">*</span><span style="color: #002200;">)</span>parent <span style="color: #002200;">{</span>
+        <span style="color: #a61390;">return</span> <span style="color: #002200;">[</span><span style="color: #002200;">[</span><span style="color: #002200;">[</span>UIView alloc<span style="color: #002200;">]</span> initWithParent<span style="color: #002200;">:</span>parent<span style="color: #002200;">]</span> autorelease<span style="color: #002200;">]</span>;
+<span style="color: #002200;">}</span>
+</pre>
+        </td>
+      </tr>
+    </table>
+  </div>
 
-<p>This was all well and good as long as the only class that I was creating was a UIView, but I ran into trouble when I started creating UIImageViews.  Instantiating new UIImageViews worked fine, but as soon as I called a UIImageView-specific method the app would crash:</p>
-<pre>*** -[UIView setImage:]: unrecognized selector sent to instance 0xd1b350</pre>
-<p>I struggled with the answer to this one for a while and it wasn&#8217;t until I presented my problem to the <a href="http://groups.google.com/group/syracuse-area-cocoaheads">local CocoaHeads group</a> did I get it all figured out.  Here&#8217;s the correct way to write this method:</p>
+  <p>This was all well and good as long as the only class that I was creating was a UIView, but I ran into trouble when I started creating UIImageViews. Instantiating new UIImageViews worked fine, but as soon as I called a UIImageView-specific method the app would crash:</p>
+  <pre>
+*** -[UIView setImage:]: unrecognized selector sent to instance 0xd1b350
+</pre>
 
-<div class="wp_syntax"><table><tr><td class="code"><pre class="objc" style="font-family:monospace;"><span style="color: #002200;">+</span> <span style="color: #002200;">&#40;</span><span style="color: #a61390;">id</span><span style="color: #002200;">&#41;</span> viewWithParent<span style="color: #002200;">:</span><span style="color: #002200;">&#40;</span>UIView <span style="color: #002200;">*</span><span style="color: #002200;">&#41;</span>parent <span style="color: #002200;">&#123;</span>
-	<span style="color: #a61390;">return</span> <span style="color: #002200;">&#91;</span><span style="color: #002200;">&#91;</span><span style="color: #002200;">&#91;</span>self alloc<span style="color: #002200;">&#93;</span> initWithParent<span style="color: #002200;">:</span>parent<span style="color: #002200;">&#93;</span> autorelease<span style="color: #002200;">&#93;</span>;
-<span style="color: #002200;">&#125;</span></pre></td></tr></table></div>
+  <p>I struggled with the answer to this one for a while and it wasn&#8217;t until I presented my problem to the <a href="http://groups.google.com/group/syracuse-area-cocoaheads">local CocoaHeads group</a> did I get it all figured out. Here&#8217;s the correct way to write this method:</p>
 
-<p>By calling <strong>self</strong> instead of strongly typing the returned object as a <strong>UIView</strong> the class would dynamically determine the correct type at runtime.</p>
-<p>You can download this category here: <a href="http://fruitstandsoftware.com/blog/wp-content/uploads/2009/07/UIViewAdditions.tbz">UIViewAdditions</a></p>
-			</div>
+  <div class="wp_syntax">
+    <table>
+      <tr>
+        <td class="code">
+          <pre class="objc" style="font-family:monospace;">
+<span style="color: #002200;">+</span> <span style="color: #002200;">(</span><span style="color: #a61390;">id</span><span style="color: #002200;">)</span> viewWithParent<span style="color: #002200;">:</span><span style="color: #002200;">(</span>UIView <span style="color: #002200;">*</span><span style="color: #002200;">)</span>parent <span style="color: #002200;">{</span>
+        <span style="color: #a61390;">return</span> <span style="color: #002200;">[</span><span style="color: #002200;">[</span><span style="color: #002200;">[</span>self alloc<span style="color: #002200;">]</span> initWithParent<span style="color: #002200;">:</span>parent<span style="color: #002200;">]</span> autorelease<span style="color: #002200;">]</span>;
+<span style="color: #002200;">}</span>
+</pre>
+        </td>
+      </tr>
+    </table>
+  </div>
 
-	
-		This entry was posted in <a href="../../../category/cocoa/index.html" title="View all posts in Cocoa" rel="category tag">Cocoa</a>, <a href="../../../category/sample-code/index.html" title="View all posts in Sample Code" rel="category tag">Sample Code</a> and tagged <a href="../../../tag/category/index.html" rel="tag">Category</a>, <a href="../../../tag/cocoaheads/index.html" rel="tag">CocoaHeads</a>, <a href="../../../tag/code-reuse/index.html" rel="tag">code reuse</a>, <a href="../../../tag/debugging/index.html" rel="tag">Debugging</a>, <a href="../../../tag/iphone/index.html" rel="tag">iPhone</a>, <a href="../../../tag/mistakes/index.html" rel="tag">mistakes</a>, <a href="../../../tag/sample-code/index.html" rel="tag">Sample Code</a>, <a href="../../../tag/uiview/index.html" rel="tag">UIView</a>. 
-			
+  <p>By calling <strong>self</strong> instead of strongly typing the returned object as a <strong>UIView</strong> the class would dynamically determine the correct type at runtime.</p>
 
+  <p>You can download this category here:&#194;&nbsp;<a href="http://fruitstandsoftware.com/blog/wp-content/uploads/2009/07/UIViewAdditions.tbz">UIViewAdditions</a></p>This entry was posted in <a href="../../../category/cocoa/index.html" title="View all posts in Cocoa" rel="category tag">Cocoa</a>, <a href="../../../category/sample-code/index.html" title="View all posts in Sample Code" rel="category tag">Sample Code</a> and tagged <a href="../../../tag/category/index.html" rel="tag">Category</a>, <a href="../../../tag/cocoaheads/index.html" rel="tag">CocoaHeads</a>, <a href="../../../tag/code-reuse/index.html" rel="tag">code reuse</a>, <a href="../../../tag/debugging/index.html" rel="tag">Debugging</a>, <a href="../../../tag/iphone/index.html" rel="tag">iPhone</a>, <a href="../../../tag/mistakes/index.html" rel="tag">mistakes</a>, <a href="../../../tag/sample-code/index.html" rel="tag">Sample Code</a>, <a href="../../../tag/uiview/index.html" rel="tag">UIView</a>.
 
-					
-		
+  <div class="nav-previous">
+    <a href="../standard-iphone-element-sizes/index.html" rel="prev"><span class="meta-nav">&#8592;</span> Standard iPhone Element Sizes</a>
+  </div>
 
-	
-		<div class="nav-previous"><a href="../standard-iphone-element-sizes/index.html" rel="prev"><span class="meta-nav">&larr;</span> Standard iPhone Element Sizes</a></div>		<div class="nav-next"><a href="../../08/your-new-friends-obj-c-associated-objects/index.html" rel="next">Your New Friends: Obj-C Associated Objects <span class="meta-nav">&rarr;</span></a></div>
-	
-	
-	
-				
+  <div class="nav-next">
+    <a href="../../08/your-new-friends-obj-c-associated-objects/index.html" rel="next">Your New Friends: Obj-C Associated Objects <span class="meta-nav">&#8594;</span></a>
+  </div>
 
-	
+  <h2 class="comments-title">8 thoughts on &#8220;<span>UIView Manipulation Made Easier with a Category</span>&#8221;</h2>
 
-	
-			<h2 class="comments-title">
-			8 thoughts on &ldquo;<span>UIView Manipulation Made Easier with a Category</span>&rdquo;		</h2>
+  <ol class="commentlist">
+    <li class="comment even thread-even depth-1" id="li-comment-229">
+      <div class="comment-author vcard">
+        <cite class="fn"><a href='http://tewha.net' rel='external nofollow' class='url'>Steven Fisher</a></cite> <span class="says">says:</span>
+      </div>
 
-		
-		<ol class="commentlist">
-				<li class="comment even thread-even depth-1" id="li-comment-229">
-		
-			<footer>
-				<div class="comment-author vcard">
-										<cite class="fn"><a href='http://tewha.net' rel='external nofollow' class='url'>Steven Fisher</a></cite> <span class="says">says:</span>				</div>
-				
-				<div class="comment-meta commentmetadata">
-					<a href="comment-page-1/index.html#comment-229">
-					July 27, 2009 at 2:46 PM					</a>
-									</div>
-			
+      <div class="comment-meta commentmetadata">
+        <a href="comment-page-1/index.html#comment-229">July 27, 2009 at 2:46 PM</a>
+      </div>
 
-			<div class="comment-content"><p>I just learned that [[self alloc] init&#8230;] trick about a week ago. Not only is it more reliable, but it results in tighter code.</p>
-<p>I think the size and position properties are solid wins, but I&#8217;m less convinced about adding an incomplete subview to a parent view. Won&#8217;t that cause extra update events as you set up the view? If so the only thing I&#8217;d add to this is a viewWithFrame.</p>
-</div>
+      <div class="comment-content">
+        <p>I just learned that [[self alloc] init&#8230;] trick about a week ago. Not only is it more reliable, but it results in tighter code.</p>
 
-			<div class="reply">
-							</div>
-		
+        <p>I think the size and position properties are solid wins, but I&#8217;m less convinced about adding an incomplete subview to a parent view. Won&#8217;t that cause extra update events as you set up the view? If so the only thing I&#8217;d add to this is a viewWithFrame.</p>
+      </div>
 
-	</li>
-	<li class="post pingback">
-		<p>Pingback: <a href='http://tewha.net/2009/07/uiview-manipulation-made-easier-with-a-category/' rel='external nofollow' class='url'>tewha.net &raquo; UIView manipulation made easier with a category</a></p>
-	</li>
-	<li class="comment odd alt thread-odd thread-alt depth-1" id="li-comment-231">
-		
-			<footer>
-				<div class="comment-author vcard">
-										<cite class="fn">THRESHE</cite> <span class="says">says:</span>				</div>
-				
-				<div class="comment-meta commentmetadata">
-					<a href="comment-page-1/index.html#comment-231">
-					October 23, 2009 at 8:15 AM					</a>
-									</div>
-			
+      <div class="reply"></div>
+    </li>
 
-			<div class="comment-content"><p>Thanks for the category! I wanted to write it myself because I&#8217;ve really missed those useful methods when I switched form Qt to Cocoa. But then I decided to do a search and here it is already done for me.<br />
-Thanks a lot <img src='../../../wp-includes/images/smilies/icon_smile.gif' alt=':)' class='wp-smiley' /> </p>
-</div>
+    <li class="post pingback">
+      <p>Pingback: <a href='http://tewha.net/2009/07/uiview-manipulation-made-easier-with-a-category/' rel='external nofollow' class='url'>tewha.net &#187; UIView manipulation made easier with a category</a></p>
+    </li>
 
-			<div class="reply">
-							</div>
-		
+    <li class="comment odd alt thread-odd thread-alt depth-1" id="li-comment-231">
+      <div class="comment-author vcard">
+        <cite class="fn">THRESHE</cite> <span class="says">says:</span>
+      </div>
 
-	</li>
-	<li class="comment even thread-even depth-1" id="li-comment-257">
-		
-			<footer>
-				<div class="comment-author vcard">
-										<cite class="fn"><a href='http://fozworks.com' rel='external nofollow' class='url'>foz</a></cite> <span class="says">says:</span>				</div>
-				
-				<div class="comment-meta commentmetadata">
-					<a href="comment-page-1/index.html#comment-257">
-					January 9, 2010 at 9:34 PM					</a>
-									</div>
-			
+      <div class="comment-meta commentmetadata">
+        <a href="comment-page-1/index.html#comment-231">October 23, 2009 at 8:15 AM</a>
+      </div>
 
-			<div class="comment-content"><p>Perhaps you were inspired by WWDC 2009 session 128 (prototyping for iPhone)&#8230; I&#8217;ve been looking for that particular code for a while with no luck, and the presenter didn&#8217;t scroll through the whole .m file in his demo. However, what you put together works perfectly and I was able to go through the whole prototyping process easily because of this post &#8211; thanks!! <img src='../../../wp-includes/images/smilies/icon_smile.gif' alt=':)' class='wp-smiley' /> </p>
-</div>
+      <div class="comment-content">
+        <p>Thanks for the category! I wanted to write it myself because I&#8217;ve really missed those useful methods when I switched form Qt to Cocoa. But then I decided to do a search and here it is already done for me.<br>
+        Thanks a lot <img src='../../../wp-includes/images/smilies/icon_smile.gif' alt=':)' class='wp-smiley'></p>
+      </div>
 
-			<div class="reply">
-							</div>
-		
+      <div class="reply"></div>
+    </li>
 
-	</li>
-	<li class="comment byuser comment-author-mrrooni odd alt thread-odd thread-alt depth-1" id="li-comment-259">
-		
-			<footer>
-				<div class="comment-author vcard">
-										<cite class="fn"><a href='../../../index.html' rel='external nofollow' class='url'>Michael</a></cite> <span class="says">says:</span>				</div>
-				
-				<div class="comment-meta commentmetadata">
-					<a href="comment-page-1/index.html#comment-259">
-					January 15, 2010 at 10:33 AM					</a>
-									</div>
-			
+    <li class="comment even thread-even depth-1" id="li-comment-257">
+      <div class="comment-author vcard">
+        <cite class="fn"><a href='http://fozworks.com' rel='external nofollow' class='url'>foz</a></cite> <span class="says">says:</span>
+      </div>
 
-			<div class="comment-content"><p>You&#8217;re very welcome!</p>
-</div>
+      <div class="comment-meta commentmetadata">
+        <a href="comment-page-1/index.html#comment-257">January 9, 2010 at 9:34 PM</a>
+      </div>
 
-			<div class="reply">
-							</div>
-		
+      <div class="comment-content">
+        <p>Perhaps you were inspired by WWDC 2009 session 128 (prototyping for iPhone)&#8230; I&#8217;ve been looking for that particular code for a while with no luck, and the presenter didn&#8217;t scroll through the whole .m file in his demo. However, what you put together works perfectly and I was able to go through the whole prototyping process easily because of this post &#8211; thanks!! <img src='../../../wp-includes/images/smilies/icon_smile.gif' alt=':)' class='wp-smiley'></p>
+      </div>
 
-	</li>
-	<li class="comment even thread-even depth-1" id="li-comment-294">
-		
-			<footer>
-				<div class="comment-author vcard">
-										<cite class="fn"><a href='http://dlinsin.blogspot.com' rel='external nofollow' class='url'>David Linsin</a></cite> <span class="says">says:</span>				</div>
-				
-				<div class="comment-meta commentmetadata">
-					<a href="comment-page-1/index.html#comment-294">
-					June 19, 2010 at 10:29 AM					</a>
-									</div>
-			
+      <div class="reply"></div>
+    </li>
 
-			<div class="comment-content"><p>Thanks man! I was looking for the categories of the WWDC 09 session too! Thanks for putting them together!</p>
-</div>
+    <li class="comment byuser comment-author-mrrooni odd alt thread-odd thread-alt depth-1" id="li-comment-259">
+      <div class="comment-author vcard">
+        <cite class="fn"><a href='../../../index.html' rel='external nofollow' class='url'>Michael</a></cite> <span class="says">says:</span>
+      </div>
 
-			<div class="reply">
-							</div>
-		
+      <div class="comment-meta commentmetadata">
+        <a href="comment-page-1/index.html#comment-259">January 15, 2010 at 10:33 AM</a>
+      </div>
 
-	</li>
-	<li class="post pingback">
-		<p>Pingback: <a href='http://mobile.synyx.de/2010/06/ui-prototyping-iphone-apps/' rel='external nofollow' class='url'>UI Prototyping iPhone Apps | Mobile Solutions Blog</a></p>
-	</li>
-	<li class="post pingback">
-		<p>Pingback: <a href='http://blog.synyx.de/2010/06/ui-prototyping-iphone-apps/' rel='external nofollow' class='url'>UI Prototyping iPhone Apps | Synyx Weblog</a></p>
-	</li>
-		</ol>
+      <div class="comment-content">
+        <p>You&#8217;re very welcome!</p>
+      </div>
 
-		
-	
-			<p class="nocomments">Comments are closed.</p>
-	
-			
-</div>
+      <div class="reply"></div>
+    </li>
 
-			
-			</div>
-		</div>
+    <li class="comment even thread-even depth-1" id="li-comment-294">
+      <div class="comment-author vcard">
+        <cite class="fn"><a href='http://dlinsin.blogspot.com' rel='external nofollow' class='url'>David Linsin</a></cite> <span class="says">says:</span>
+      </div>
 
-		
-						
-			
-				
-						
-				</aside>
+      <div class="comment-meta commentmetadata">
+        <a href="comment-page-1/index.html#comment-294">June 19, 2010 at 10:29 AM</a>
+      </div>
 
-						</div>
-			
-			
-							
-					<h1 class="widget-title">Archives</h1>
-					<ul>
-							<li><a href='../../../2013/05/index.html'>May 2013</a></li>
-	<li><a href='../../../2013/04/index.html'>April 2013</a></li>
-	<li><a href='../../../2013/02/index.html'>February 2013</a></li>
-	<li><a href='../../../2012/08/index.html'>August 2012</a></li>
-	<li><a href='../../../2012/07/index.html'>July 2012</a></li>
-	<li><a href='../../../2012/06/index.html'>June 2012</a></li>
-	<li><a href='../../../2012/05/index.html'>May 2012</a></li>
-	<li><a href='../../../2010/06/index.html'>June 2010</a></li>
-	<li><a href='../../../2010/03/index.html'>March 2010</a></li>
-	<li><a href='../../../2010/01/index.html'>January 2010</a></li>
-	<li><a href='../../12/index.html'>December 2009</a></li>
-	<li><a href='../../10/index.html'>October 2009</a></li>
-	<li><a href='../../09/index.html'>September 2009</a></li>
-	<li><a href='../../08/index.html'>August 2009</a></li>
-	<li><a href='../index.html'>July 2009</a></li>
-	<li><a href='../../06/index.html'>June 2009</a></li>
-	<li><a href='../../05/index.html'>May 2009</a></li>
-	<li><a href='../../04/index.html'>April 2009</a></li>
-	<li><a href='../../03/index.html'>March 2009</a></li>
-	<li><a href='../../02/index.html'>February 2009</a></li>
-	<li><a href='../../01/index.html'>January 2009</a></li>
-	<li><a href='../../../2008/11/index.html'>November 2008</a></li>
-	<li><a href='../../../2008/09/index.html'>September 2008</a></li>
-	<li><a href='../../../2008/08/index.html'>August 2008</a></li>
-	<li><a href='../../../2008/07/index.html'>July 2008</a></li>
-					</ul>
-				</aside>
-						</div>
-			
-			
-							
-					
-					<ul>
-												
-											</ul>
-				</aside>
-						</div>
-		</div>
+      <div class="comment-content">
+        <p>Thanks man! I was looking for the categories of the WWDC 09 session too! Thanks for putting them together!</p>
+      </div>
 
-</div>
-</div>
+      <div class="reply"></div>
+    </li>
 
+    <li class="post pingback">
+      <p>Pingback: <a href='http://mobile.synyx.de/2010/06/ui-prototyping-iphone-apps/' rel='external nofollow' class='url'>UI Prototyping iPhone Apps | Mobile Solutions Blog</a></p>
+    </li>
 
-<script type='text/javascript'>
+    <li class="post pingback">
+      <p>Pingback: <a href='http://blog.synyx.de/2010/06/ui-prototyping-iphone-apps/' rel='external nofollow' class='url'>UI Prototyping iPhone Apps | Synyx Weblog</a></p>
+    </li>
+  </ol>
+
+  <p class="nocomments">Comments are closed.</p>
+
+  <h1 class="widget-title">Archives</h1>
+
+  <ul>
+    <li><a href='../../../2013/05/index.html'>May 2013</a></li>
+
+    <li><a href='../../../2013/04/index.html'>April 2013</a></li>
+
+    <li><a href='../../../2013/02/index.html'>February 2013</a></li>
+
+    <li><a href='../../../2012/08/index.html'>August 2012</a></li>
+
+    <li><a href='../../../2012/07/index.html'>July 2012</a></li>
+
+    <li><a href='../../../2012/06/index.html'>June 2012</a></li>
+
+    <li><a href='../../../2012/05/index.html'>May 2012</a></li>
+
+    <li><a href='../../../2010/06/index.html'>June 2010</a></li>
+
+    <li><a href='../../../2010/03/index.html'>March 2010</a></li>
+
+    <li><a href='../../../2010/01/index.html'>January 2010</a></li>
+
+    <li><a href='../../12/index.html'>December 2009</a></li>
+
+    <li><a href='../../10/index.html'>October 2009</a></li>
+
+    <li><a href='../../09/index.html'>September 2009</a></li>
+
+    <li><a href='../../08/index.html'>August 2009</a></li>
+
+    <li><a href='../index.html'>July 2009</a></li>
+
+    <li><a href='../../06/index.html'>June 2009</a></li>
+
+    <li><a href='../../05/index.html'>May 2009</a></li>
+
+    <li><a href='../../04/index.html'>April 2009</a></li>
+
+    <li><a href='../../03/index.html'>March 2009</a></li>
+
+    <li><a href='../../02/index.html'>February 2009</a></li>
+
+    <li><a href='../../01/index.html'>January 2009</a></li>
+
+    <li><a href='../../../2008/11/index.html'>November 2008</a></li>
+
+    <li><a href='../../../2008/09/index.html'>September 2008</a></li>
+
+    <li><a href='../../../2008/08/index.html'>August 2008</a></li>
+
+    <li><a href='../../../2008/07/index.html'>July 2008</a></li>
+  </ul><script type='text/javascript'>
 /* <![CDATA[ */
-var viewsCacheL10n = {"admin_ajax_url":"http:\/\/www.fruitstandsoftware.com\/blog\/wp-admin\/admin-ajax.php","post_id":"345"};
-/* ]]> */
+  var viewsCacheL10n = {"admin_ajax_url":"http:\/\/www.fruitstandsoftware.com\/blog\/wp-admin\/admin-ajax.php","post_id":"345"};
+  /* ]]> */
+  </script><script type='text/javascript' src='../../../wp-content/plugins/wp-postviews/postviews-cache-ver=1.64.js'>
+</script><script type='text/javascript' src='../../../wp-content/themes/landscape/js/small-menu-ver=20120206.js'>
 </script>
-<script type='text/javascript' src='../../../wp-content/plugins/wp-postviews/postviews-cache-ver=1.64.js'></script>
-<script type='text/javascript' src='../../../wp-content/themes/landscape/js/small-menu-ver=20120206.js'></script>
-
 </body>
 </html>
-
-
-
