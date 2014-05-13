@@ -19,32 +19,33 @@ While working on a major update for one of our products at [No Thirst](http://no
 
 If you try to follow a similar pattern while using auto layout and do most of your work in XIBs with very little code you hit a bit of a curve in the road. With springs and struts you set your autoresizing masks on individual views allowing you to define what each view controller's view should do when added to a super view. Layout constraints (instances of [NSLayoutConstraint](https://developer.apple.com/library/mac/#documentation/AppKit/Reference/NSLayoutConstraint_Class/NSLayoutConstraint/NSLayoutConstraint.html)) define relationships **_between_** views. This means that in order to create a layout constraint between two views both views need to be present at the time the relationship is defined. Thinking I could outsmart the system I had what I thought was a eureka moment. "Ah ha!" I thought, "I'll follow the same pattern of using container views, but in each view controller's awakeFromNib I'll set up some constraints that mimic NSViewHeightSizable | NSViewWidthSizable. I'm a GENIUS!"
 
-    
+```objective-c
     - (void)awakeFromNib
     {
         NSDictionary *viewsDictionary = @{ @"view":self.view };
-    
+
         NSArray *horizontalMaximizingConstraints = [NSLayoutConstraint constraintsWithVisualFormat:@"|[view]|"
-                                                                                           options:0 
-                                                                                           metrics:nil 
+                                                                                           options:0
+                                                                                           metrics:nil
                                                                                              views:viewsDictionary];
-    
-        NSArray *verticalMaximizingConstraints = [NSLayoutConstraint constraintsWithVisualFormat:@"V:|[view]|" 
-                                                                                         options:0 
-                                                                                         metrics:nil 
+
+        NSArray *verticalMaximizingConstraints = [NSLayoutConstraint constraintsWithVisualFormat:@"V:|[view]|"
+                                                                                         options:0
+                                                                                         metrics:nil
                                                                                            views:viewsDictionary];
         [self.view addConstraints:horizontalMaximizingConstraints];
         [self.view addConstraints:verticalMaximizingConstraints];
     }
+```
 
 
 Uh, yeah, not so much:
 
-    
-    2012-07-11 14:02:07.339 Shmet Bencher[15158:303] *** Terminating app due to uncaught 
-    exception 'NSInvalidArgumentException', reason: 'Unable to parse constraint format: 
-    Unable to interpret '|' character, because the related view doesn't have a superview 
-    |[view]| 
+
+    2012-07-11 14:02:07.339 Shmet Bencher[15158:303] *** Terminating app due to uncaught
+    exception 'NSInvalidArgumentException', reason: 'Unable to parse constraint format:
+    Unable to interpret '|' character, because the related view doesn't have a superview
+    |[view]|
            ^'
 
 
@@ -61,10 +62,10 @@ As far as I can see there are two possible solutions to the original question:
 
 
 
-	
+
   1. Follow the container view pattern. In your XIB you define the relationships between the container views and then in code you add your view controller views to those container views and set up constraints similar to the ones I posted above. The difference being that the | character will now represent a super view that actually exists.
 
-	
+
   2. Skip container views, leave your XIB alone, add all your view controller views as direct subviews of the window and then define the relationships between them.
 
 
@@ -86,13 +87,13 @@ The answer, of course, is, "it depends". According to Apple you should define yo
 
 
 
-	
+
   * Within interface builder
 
-	
+
   * Using the visual format language in code (as I did above)
 
-	
+
   * Individually using the **constraintWithItem:attribute:relatedBy:toItem:attribute:multiplier:constant:** class method on NSLayoutConstraint
 
 

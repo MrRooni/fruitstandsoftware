@@ -30,13 +30,13 @@ Let's start by setting up the Xcode project that will be the basis of the rest o
 
 
 
-	
+
   * Open Xcode and create a new Cocoa Application project called DrawingSample.
 
-	
+
   * Create a new NSView subclass called CustomDrawingView.
 
-	
+
   * Open MainMenu.xib, add a new Custom View to the Main Window, set its class to be CustomDrawingView, and set it's autosizing flags as seen here:
 
 
@@ -46,11 +46,9 @@ Let's start by setting up the Xcode project that will be the basis of the rest o
 Save and Quit Interface Builder and switch back to Xcode.  Open CustomDrawingView.m, it should look like so:
 
 
-
-
-    
+```objective-c
     @implementation CustomDrawingView
-    
+
     - (id)initWithFrame:(NSRect)frame {
         self = [super initWithFrame:frame];
         if (self) {
@@ -58,15 +56,13 @@ Save and Quit Interface Builder and switch back to Xcode.  Open CustomDrawingVi
         }
         return self;
     }
-    
+
     - (void)drawRect:(NSRect)dirtyRect {
         // Drawing code here.
     }
-    
+
     @end
-
-
-
+```
 
 We're going to start (and finish) today with just a simple concept and some basic drawing that will set the stage for the future posts. All drawing in Cocoa is done by first setting up the environment in which you want to draw, and then doing the actual drawing. For instance, if we want to draw a blue box, we first have to setup the color blue, define the bounds of the box, and then draw it.  In this case we are using the NSRect that is passed to the drawRect method as the box we want to draw, and we setup the color blue by calling [[NSColor blueColor] set].  We then use the convenience method NSRectFill to fill the dirtyRect with the color blue.  Notice that we didn't pass the color to NSRectFill, we set it, and from then on anything we draw will be blue until we change the color.
 
@@ -77,12 +73,12 @@ You can think of drawing in Cocoa much the same way as you would think of painti
 
 
 
-
-    
+```objective-c
     - (void)drawRect:(NSRect)dirtyRect {
     	[[NSColor blueColor] set];
     	NSRectFill(dirtyRect);
     }
+```
 
 
 
